@@ -1,4 +1,4 @@
-# Headwind — AI-Agent Runtime Security Pipeline (Design Spec)
+# AgentShield — AI-Agent Runtime Security Pipeline (Design Spec)
 
 **Date:** 2026-08-24
 **Purpose:** Interview-prep project for a Backend Engineer role at Upwind. Applies Upwind's
