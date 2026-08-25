@@ -31,7 +31,6 @@ var (
 	sampleURLs     = []string{"https://pkg.go.dev", "https://github.com", "http://exfil-node.xyz/upload"}
 )
 
-// newID returns 16 random bytes as hex — a unique event id (like a UUID).
 func newID() string {
 	randomBytes := make([]byte, 16)
 	rand.Read(randomBytes)
@@ -76,7 +75,6 @@ func main() {
 	if err != nil {
 		log.Fatal("connect to rabbitmq: ", err)
 	}
-	// defer = run when main() exits, like Kotlin's use{} / Java's finally.
 	defer connection.Close()
 
 	channel, err := connection.Channel()
@@ -89,7 +87,6 @@ func main() {
 		log.Fatal("declare queues: ", err)
 	}
 
-	// Emit one random event every 2 seconds, forever.
 	for {
 		evt := randomEvent(customerID, agentID)
 		payload, err := json.Marshal(evt)

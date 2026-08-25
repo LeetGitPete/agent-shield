@@ -89,7 +89,7 @@ func main() {
 		log.Fatal("set qos: ", err)
 	}
 
-	// autoAck=false: WE decide when a message counts as processed.
+	// autoAck=false: messages are acked only after findings are persisted.
 	deliveries, err := channel.Consume(mq.EventsQueue, "detector", false, false, false, false, nil)
 	if err != nil {
 		log.Fatal("consume: ", err)
@@ -98,7 +98,6 @@ func main() {
 	engine := rules.NewEngine()
 	log.Println("detector running")
 
-	// `range` over the channel blocks until the next message arrives.
 	for delivery := range deliveries {
 		var evt event.Event
 		if err := json.Unmarshal(delivery.Body, &evt); err != nil || evt.ID == "" {

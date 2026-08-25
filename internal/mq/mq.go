@@ -15,8 +15,7 @@ const (
 // Declare sets up all queues. Rejected events messages (nack with
 // requeue=false) are dead-lettered to the DLQ instead of being dropped.
 func Declare(channel *amqp.Channel) error {
-	// The arguments mean: durable=true (queue survives broker restart),
-	// autoDelete=false, exclusive=false, noWait=false.
+	// durable=true throughout: queues survive a broker restart.
 	if _, err := channel.QueueDeclare(DLQ, true, false, false, false, nil); err != nil {
 		return err
 	}

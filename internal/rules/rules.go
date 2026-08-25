@@ -60,7 +60,6 @@ func (engine *Engine) Evaluate(evt event.Event) []Finding {
 				Severity: "HIGH",
 				Detail:   "agent read secret file " + evt.Args["path"],
 			})
-			// Remember this for the exfiltration rule below.
 			engine.agentsThatReadSecrets[agentKey] = true
 		}
 
@@ -82,8 +81,7 @@ func (engine *Engine) Evaluate(evt event.Event) []Finding {
 				Detail:   "agent fetched non-allowlisted domain " + domain,
 			})
 		}
-		// The stateful rule: ANY web request by an agent that previously
-		// read a secret could be carrying that secret out.
+		// Any web request after a secret read could carry the secret out.
 		if engine.agentsThatReadSecrets[agentKey] {
 			findings = append(findings, Finding{
 				Rule:     "exfiltration",
