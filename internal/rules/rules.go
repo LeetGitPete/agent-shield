@@ -3,23 +3,20 @@
 package rules
 
 import (
-	"net/url"
-	"strings"
+	"net/url" // URL parsing for the domain rule
+	"strings" // substring checks for path/command rules
 
 	"github.com/leetgitpete/agent-shield/internal/event"
 )
 
-// Finding is one rule match on one event. The detector stores these in
-// Postgres; everything else (event id, customer, agent) comes from the
-// event the finding was produced for.
+// Finding is one rule match on one event; the detector stores these in Postgres.
 type Finding struct {
 	Rule     string // machine-readable rule name, e.g. "pipe_to_shell"
 	Severity string // MEDIUM, HIGH or CRITICAL
 	Detail   string // human-readable explanation for the analyst
 }
 
-// Reading any path containing one of these fragments counts as touching
-// a secret (credentials, private keys, env files).
+// Reading any path containing one of these fragments counts as touching a secret.
 var secretPathFragments = []string{".env", "id_rsa", "id_ed25519", ".aws/credentials", ".ssh/"}
 
 // Domains an agent may fetch without raising a finding.
@@ -31,40 +28,35 @@ var allowedDomains = map[string]bool{
 	"stackoverflow.com": true,
 }
 
-// Engine runs every rule against each incoming event.
-//
-// It is STATEFUL: the exfiltration rule fires when an agent makes a web
-// request *after* having read a secret earlier, so the engine remembers
-// which agents have read secrets. The map key is "customerID/agentID"
-// so two customers' agents with the same name never mix.
+// Engine runs every rule against each incoming event. Stateful: the
+// exfiltration rule needs to know which agents previously read secrets.
 type Engine struct {
-	agentsThatReadSecrets map[string]bool
+	agentsThatReadSecrets map[string]bool // key "customerID/agentID" so tenants never mix
 }
 
 func NewEngine() *Engine {
-	return &Engine{agentsThatReadSecrets: make(map[string]bool)}
+	return &Engine{agentsThatReadSecrets: make(map[string]bool)} // maps must be initialized before use
 }
 
-// Evaluate returns all findings for one event (usually zero or one,
-// but a single event can match several rules).
+// Evaluate returns all findings for one event (a single event can match several rules).
 func (engine *Engine) Evaluate(evt event.Event) []Finding {
-	var findings []Finding
-	agentKey := evt.CustomerID + "/" + evt.AgentID
+	var findings []Finding                         // nil slice; append() allocates on first use
+	agentKey := evt.CustomerID + "/" + evt.AgentID // per-tenant identity of this agent
 
-	switch evt.Tool {
+	switch evt.Tool { // each tool kind has its own rules
 
 	case event.ToolFileRead:
-		if isSecretPath(evt.Args["path"]) {
+		if isSecretPath(evt.Args["path"]) { // rule 1: secret file access
 			findings = append(findings, Finding{
 				Rule:     "secret_file_read",
 				Severity: "HIGH",
 				Detail:   "agent read secret file " + evt.Args["path"],
 			})
-			engine.agentsThatReadSecrets[agentKey] = true
+			engine.agentsThatReadSecrets[agentKey] = true // feeds the exfiltration rule below
 		}
 
 	case event.ToolBashExec:
-		if isPipeToShell(evt.Args["command"]) {
+		if isPipeToShell(evt.Args["command"]) { // rule 2: downloaded code piped into a shell
 			findings = append(findings, Finding{
 				Rule:     "pipe_to_shell",
 				Severity: "CRITICAL",
@@ -74,15 +66,14 @@ func (engine *Engine) Evaluate(evt event.Event) []Finding {
 
 	case event.ToolWebFetch:
 		domain := domainOf(evt.Args["url"])
-		if domain != "" && !allowedDomains[domain] {
+		if domain != "" && !allowedDomains[domain] { // rule 3: fetch outside the allowlist
 			findings = append(findings, Finding{
 				Rule:     "unknown_domain",
 				Severity: "MEDIUM",
 				Detail:   "agent fetched non-allowlisted domain " + domain,
 			})
 		}
-		// Any web request after a secret read could carry the secret out.
-		if engine.agentsThatReadSecrets[agentKey] {
+		if engine.agentsThatReadSecrets[agentKey] { // rule 4 (stateful): web request after a secret read could carry it out
 			findings = append(findings, Finding{
 				Rule:     "exfiltration",
 				Severity: "CRITICAL",
@@ -94,7 +85,7 @@ func (engine *Engine) Evaluate(evt event.Event) []Finding {
 }
 
 func isSecretPath(path string) bool {
-	for _, fragment := range secretPathFragments {
+	for _, fragment := range secretPathFragments { // range = for-each; first value (index) ignored with _
 		if strings.Contains(path, fragment) {
 			return true
 		}
@@ -102,22 +93,21 @@ func isSecretPath(path string) bool {
 	return false
 }
 
-// isPipeToShell catches the classic "curl http://... | sh" pattern:
-// something piped into a shell interpreter.
+// isPipeToShell catches the classic "curl http://... | sh" pattern.
 func isPipeToShell(command string) bool {
-	if !strings.Contains(command, "|") {
+	if !strings.Contains(command, "|") { // no pipe, nothing to check
 		return false
 	}
-	afterLastPipe := command[strings.LastIndex(command, "|")+1:]
-	words := strings.Fields(afterLastPipe)
-	return len(words) > 0 && (words[0] == "sh" || words[0] == "bash" || words[0] == "zsh")
+	afterLastPipe := command[strings.LastIndex(command, "|")+1:]                           // substring after the last "|"
+	words := strings.Fields(afterLastPipe)                                                 // split on whitespace
+	return len(words) > 0 && (words[0] == "sh" || words[0] == "bash" || words[0] == "zsh") // is a shell the pipe target?
 }
 
 // domainOf extracts "example.com" from "https://example.com/path".
 func domainOf(rawURL string) string {
 	parsed, err := url.Parse(rawURL)
 	if err != nil {
-		return ""
+		return "" // unparseable URL: treat as no domain
 	}
 	return parsed.Hostname()
 }
