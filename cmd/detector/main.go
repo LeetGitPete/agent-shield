@@ -1,3 +1,12 @@
+// The detector is the heart of the pipeline. It:
+//  1. consumes agent tool-call events from RabbitMQ,
+//  2. runs the rules engine over each one,
+//  3. stores any findings in Postgres (skipping duplicates),
+//  4. publishes a triage request so the LLM service can review the finding.
+//
+// Delivery semantics: at-least-once. A message is acked only after its
+// findings are safely in Postgres; if we crash mid-way RabbitMQ redelivers,
+// and the (event_id, rule) unique constraint makes the redelivery harmless.
 package main
 
 import (
@@ -6,7 +15,7 @@ import (
 	"log"
 	"os"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
+	_ "github.com/jackc/pgx/v5/stdlib" // registers the "pgx" driver with database/sql
 	amqp "github.com/rabbitmq/amqp091-go"
 
 	"github.com/leetgitpete/agent-shield/internal/event"
@@ -14,7 +23,8 @@ import (
 	"github.com/leetgitpete/agent-shield/internal/rules"
 )
 
-const schema = `
+// Run on startup; IF NOT EXISTS makes it safe to run every time.
+const findingsSchema = `
 CREATE TABLE IF NOT EXISTS findings (
 	id          BIGSERIAL PRIMARY KEY,
 	event_id    TEXT NOT NULL,
@@ -28,7 +38,7 @@ CREATE TABLE IF NOT EXISTS findings (
 	UNIQUE (event_id, rule)
 )`
 
-// TriageRequest is what we hand the LLM triage service.
+// TriageRequest is the message we publish for the LLM triage service.
 type TriageRequest struct {
 	FindingID int64       `json:"finding_id"`
 	Event     event.Event `json:"event"`
@@ -38,46 +48,49 @@ type TriageRequest struct {
 }
 
 func envOr(key, fallback string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
+	if value := os.Getenv(key); value != "" {
+		return value
 	}
 	return fallback
 }
 
 func main() {
 	amqpURL := envOr("AMQP_URL", "amqp://guest:guest@localhost:5672/")
-	pgURL := envOr("POSTGRES_URL", "postgres://postgres:postgres@localhost:5432/agentshield")
+	postgresURL := envOr("POSTGRES_URL", "postgres://postgres:postgres@localhost:5432/agentshield")
 
-	db, err := sql.Open("pgx", pgURL)
+	db, err := sql.Open("pgx", postgresURL)
 	if err != nil {
 		log.Fatal("open postgres: ", err)
 	}
 	defer db.Close()
-	if _, err := db.Exec(schema); err != nil {
+	if _, err := db.Exec(findingsSchema); err != nil {
 		log.Fatal("create schema: ", err)
 	}
 
-	conn, err := amqp.Dial(amqpURL)
+	connection, err := amqp.Dial(amqpURL)
 	if err != nil {
 		log.Fatal("connect to rabbitmq: ", err)
 	}
-	defer conn.Close()
-	ch, err := conn.Channel()
+	defer connection.Close()
+
+	channel, err := connection.Channel()
 	if err != nil {
 		log.Fatal("open channel: ", err)
 	}
-	defer ch.Close()
-	if err := mq.Declare(ch); err != nil {
+	defer channel.Close()
+
+	if err := mq.Declare(channel); err != nil {
 		log.Fatal("declare queues: ", err)
 	}
 
-	// Prefetch: hold at most 16 unacked messages — backpressure so a slow
-	// detector never buffers the whole queue in memory.
-	if err := ch.Qos(16, 0, false); err != nil {
+	// Prefetch = backpressure: RabbitMQ hands us at most 16 unacked
+	// messages at a time, so a slow detector never gets flooded.
+	if err := channel.Qos(16, 0, false); err != nil {
 		log.Fatal("set qos: ", err)
 	}
-	// autoAck=false: we ack only after the finding is safely in Postgres.
-	msgs, err := ch.Consume(mq.EventsQueue, "detector", false, false, false, false, nil)
+
+	// autoAck=false: WE decide when a message counts as processed.
+	deliveries, err := channel.Consume(mq.EventsQueue, "detector", false, false, false, false, nil)
 	if err != nil {
 		log.Fatal("consume: ", err)
 	}
@@ -85,58 +98,72 @@ func main() {
 	engine := rules.NewEngine()
 	log.Println("detector running")
 
-	for msg := range msgs {
-		var ev event.Event
-		if err := json.Unmarshal(msg.Body, &ev); err != nil || ev.ID == "" {
-			// Malformed: no point retrying — dead-letter it.
-			log.Printf("malformed event -> DLQ: %.100s", msg.Body)
-			msg.Nack(false, false)
+	// `range` over the channel blocks until the next message arrives.
+	for delivery := range deliveries {
+		var evt event.Event
+		if err := json.Unmarshal(delivery.Body, &evt); err != nil || evt.ID == "" {
+			// Malformed JSON will never parse no matter how often we retry,
+			// so reject WITHOUT requeue -> RabbitMQ dead-letters it to the DLQ.
+			log.Printf("malformed event -> DLQ: %.100s", delivery.Body)
+			delivery.Nack(false, false)
 			continue
 		}
 
-		findings := engine.Evaluate(ev)
-		ok := true
-		for _, f := range findings {
-			if err := storeAndRequestTriage(db, ch, ev, f); err != nil {
+		findings := engine.Evaluate(evt)
+
+		storedAll := true
+		for _, finding := range findings {
+			if err := storeAndRequestTriage(db, channel, evt, finding); err != nil {
 				log.Println("store finding: ", err)
-				ok = false
+				storedAll = false
 				break
 			}
 		}
-		if !ok {
-			// Infra error (e.g. DB down): requeue for retry, don't dead-letter.
-			msg.Nack(false, true)
+		if !storedAll {
+			// Infrastructure hiccup (e.g. Postgres briefly down): requeue
+			// so the event is retried, unlike the malformed case above.
+			delivery.Nack(false, true)
 			continue
 		}
+
 		if len(findings) > 0 {
-			log.Printf("event %s: %d finding(s)", ev.ID, len(findings))
+			log.Printf("event %s: %d finding(s)", evt.ID, len(findings))
 		}
-		msg.Ack(false)
+		delivery.Ack(false)
 	}
 }
 
-func storeAndRequestTriage(db *sql.DB, ch *amqp.Channel, ev event.Event, f rules.Finding) error {
-	var id int64
+// storeAndRequestTriage inserts one finding and, if it is new, asks the
+// triage service to review it. Duplicate findings (same event + rule,
+// e.g. after a redelivery) are silently skipped.
+func storeAndRequestTriage(db *sql.DB, channel *amqp.Channel, evt event.Event, finding rules.Finding) error {
+	var findingID int64
 	err := db.QueryRow(`
 		INSERT INTO findings (event_id, customer_id, agent_id, rule, severity, ts, detail)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		ON CONFLICT (event_id, rule) DO NOTHING
 		RETURNING id`,
-		ev.ID, ev.CustomerID, ev.AgentID, f.Rule, f.Severity, ev.Ts, f.Detail,
-	).Scan(&id)
+		evt.ID, evt.CustomerID, evt.AgentID, finding.Rule, finding.Severity, evt.Ts, finding.Detail,
+	).Scan(&findingID)
+
 	if err == sql.ErrNoRows {
-		// Duplicate delivery: finding already stored, nothing to do.
+		// ON CONFLICT ... DO NOTHING returned no row: this finding already
+		// exists (duplicate delivery). Done — and no second triage request.
 		return nil
 	}
 	if err != nil {
 		return err
 	}
 
-	req, err := json.Marshal(TriageRequest{
-		FindingID: id, Event: ev, Rule: f.Rule, Severity: f.Severity, Detail: f.Detail,
+	triageMessage, err := json.Marshal(TriageRequest{
+		FindingID: findingID,
+		Event:     evt,
+		Rule:      finding.Rule,
+		Severity:  finding.Severity,
+		Detail:    finding.Detail,
 	})
 	if err != nil {
 		return err
 	}
-	return mq.PublishJSON(ch, mq.TriageQueue, req)
+	return mq.PublishJSON(channel, mq.TriageQueue, triageMessage)
 }
