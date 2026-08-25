@@ -13,9 +13,8 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 
 	"github.com/leetgitpete/agent-shield/internal/event"
+	"github.com/leetgitpete/agent-shield/internal/mq"
 )
-
-const queueName = "events"
 
 var tools = []event.Tool{event.ToolBashExec, event.ToolFileRead, event.ToolWebFetch}
 
@@ -79,10 +78,8 @@ func main() {
 	}
 	defer ch.Close()
 
-	// Idempotent: creates the queue if missing, no-op if it exists.
-	// durable=true so messages survive a broker restart.
-	if _, err := ch.QueueDeclare(queueName, true, false, false, false, nil); err != nil {
-		log.Fatal("declare queue: ", err)
+	if err := mq.Declare(ch); err != nil {
+		log.Fatal("declare queues: ", err)
 	}
 
 	for {
@@ -92,12 +89,7 @@ func main() {
 			fmt.Fprintln(os.Stderr, "marshal failed:", err)
 			continue
 		}
-		err = ch.Publish("", queueName, false, false, amqp.Publishing{
-			ContentType:  "application/json",
-			DeliveryMode: amqp.Persistent,
-			Body:         data,
-		})
-		if err != nil {
+		if err := mq.PublishJSON(ch, mq.EventsQueue, data); err != nil {
 			log.Fatal("publish: ", err)
 		}
 		fmt.Println("published:", string(data))
