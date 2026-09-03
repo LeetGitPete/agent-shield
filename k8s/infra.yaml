@@ -1,0 +1,61 @@
+# RabbitMQ + Postgres, single replica each, no persistence (demo cluster).
+# Production would use StatefulSets with PersistentVolumeClaims or managed services.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: rabbitmq } }
+  template:
+    metadata: { labels: { app: rabbitmq } }
+    spec:
+      containers:
+        - name: rabbitmq
+          image: rabbitmq:4-management
+          ports: [{ containerPort: 5672 }, { containerPort: 15672 }]
+          readinessProbe:
+            exec: { command: ["rabbitmq-diagnostics", "-q", "ping"] }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq # DNS name other pods use: amqp://rabbitmq:5672
+spec:
+  selector: { app: rabbitmq }
+  ports:
+    - { name: amqp, port: 5672 }
+    - { name: management, port: 15672 }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: postgres } }
+  template:
+    metadata: { labels: { app: postgres } }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:17
+          env:
+            - { name: POSTGRES_PASSWORD, value: postgres }
+            - { name: POSTGRES_DB, value: agentshield }
+          ports: [{ containerPort: 5432 }]
+          readinessProbe:
+            exec: { command: ["pg_isready", "-U", "postgres"] }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+spec:
+  selector: { app: postgres }
+  ports:
+    - { port: 5432 }

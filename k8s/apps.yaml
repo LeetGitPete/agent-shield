@@ -1,0 +1,111 @@
+# AgentShield services. Images are built locally (imagePullPolicy: Never —
+# Docker Desktop's cluster shares the local Docker daemon).
+# The Gemini key comes from a Secret created out-of-band:
+#   kubectl create secret generic gemini --from-env-file=.env
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: detector
+spec:
+  replicas: 1 # scaling this up needs shared exfiltration state (Redis) — see README
+  selector: { matchLabels: { app: detector } }
+  template:
+    metadata: { labels: { app: detector } }
+    spec:
+      containers:
+        - name: detector
+          image: agent-shield-detector:local
+          imagePullPolicy: Never
+          env: # YAML anchors don't cross `---` documents, so env is repeated per service
+            - { name: AMQP_URL, value: "amqp://guest:guest@rabbitmq:5672/" }
+            - { name: POSTGRES_URL, value: "postgres://postgres:postgres@postgres:5432/agentshield" }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: triage
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: triage } }
+  template:
+    metadata: { labels: { app: triage } }
+    spec:
+      containers:
+        - name: triage
+          image: agent-shield-triage:local
+          imagePullPolicy: Never
+          env:
+            - { name: AMQP_URL, value: "amqp://guest:guest@rabbitmq:5672/" }
+            - { name: POSTGRES_URL, value: "postgres://postgres:postgres@postgres:5432/agentshield" }
+            - name: GEMINI_API_KEY
+              valueFrom: { secretKeyRef: { name: gemini, key: GEMINI_API_KEY } }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+spec:
+  replicas: 2 # stateless: scales freely
+  selector: { matchLabels: { app: api } }
+  template:
+    metadata: { labels: { app: api } }
+    spec:
+      containers:
+        - name: api
+          image: agent-shield-api:local
+          imagePullPolicy: Never
+          env:
+            - { name: AMQP_URL, value: "amqp://guest:guest@rabbitmq:5672/" }
+            - { name: POSTGRES_URL, value: "postgres://postgres:postgres@postgres:5432/agentshield" }
+          ports: [{ containerPort: 8080 }]
+          readinessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+spec:
+  type: LoadBalancer # Docker Desktop exposes this on localhost:8080
+  selector: { app: api }
+  ports:
+    - { port: 8080 }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sensor-acme
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: sensor-acme } }
+  template:
+    metadata: { labels: { app: sensor-acme } }
+    spec:
+      containers:
+        - name: sensor
+          image: agent-shield-sensor:local
+          imagePullPolicy: Never
+          env:
+            - { name: AMQP_URL, value: "amqp://guest:guest@rabbitmq:5672/" }
+            - { name: CUSTOMER_ID, value: acme }
+            - { name: AGENT_ID, value: agent-1 }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sensor-globex
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: sensor-globex } }
+  template:
+    metadata: { labels: { app: sensor-globex } }
+    spec:
+      containers:
+        - name: sensor
+          image: agent-shield-sensor:local
+          imagePullPolicy: Never
+          env:
+            - { name: AMQP_URL, value: "amqp://guest:guest@rabbitmq:5672/" }
+            - { name: CUSTOMER_ID, value: globex }
+            - { name: AGENT_ID, value: agent-7 }
