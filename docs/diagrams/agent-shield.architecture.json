@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "AgentShield — Runtime Security Pipeline for AI Agents",
+    "output": "agent-shield-architecture.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/LeetGitPete/agent-shield",
+      "revision": "4cc2070f4c2d2b442d038d6959a46b958a8e1e3e"
+    },
+    "views": [
+      { "id": "main-pipeline", "label": "Main pipeline", "focus": ["sensor-acme", "sensor-globex", "events-q", "detector", "postgres", "api", "operator"], "note": "Tool-call events flow from agent sensors through the queue and rules engine into durable findings." },
+      { "id": "reliability", "label": "Delivery guarantees", "focus": ["events-q", "dlq", "detector", "postgres"], "note": "At-least-once: manual acks, poison messages dead-lettered, duplicates absorbed by a unique constraint." },
+      { "id": "triage-loop", "label": "LLM triage loop", "focus": ["detector", "triage-q", "triage", "gemini", "postgres"], "note": "Only rule hits reach the LLM; verdicts land back on the finding row." },
+      { "id": "tenancy", "label": "Multi-tenancy", "focus": ["sensor-acme", "sensor-globex", "api"], "note": "One shared pipeline; customer_id travels with every event, finding, and API query." }
+    ]
+  },
+  "components": [
+    { "id": "sensor-acme", "type": "external", "label": "Sensor — acme", "sublabel": "agent-1 · mock MCP proxy", "pos": [40, 130], "size": [150, 60], "sources": [{ "path": "cmd/sensor/main.go" }] },
+    { "id": "sensor-globex", "type": "external", "label": "Sensor — globex", "sublabel": "agent-7 · mock MCP proxy", "pos": [40, 290], "size": [150, 60], "sources": [{ "path": "cmd/sensor/main.go" }] },
+    { "id": "events-q", "type": "messagebus", "label": "events queue", "sublabel": "durable · DLX", "pos": [290, 210], "size": [150, 60], "sources": [{ "path": "internal/mq/mq.go" }] },
+    { "id": "dlq", "type": "messagebus", "label": "events.dlq", "sublabel": "poison messages", "pos": [290, 420], "size": [150, 60], "sources": [{ "path": "internal/mq/mq.go" }] },
+    { "id": "detector", "type": "backend", "label": "Detector", "sublabel": "Go · 4-rule engine", "pos": [540, 210], "size": [150, 60], "tag": "stateful exfil rule", "sources": [{ "path": "cmd/detector/main.go" }, { "path": "internal/rules/rules.go" }] },
+    { "id": "triage-q", "type": "messagebus", "label": "triage queue", "sublabel": "rule hits only", "pos": [540, 420], "size": [150, 60], "sources": [{ "path": "internal/mq/mq.go" }] },
+    { "id": "postgres", "type": "database", "label": "PostgreSQL 17", "sublabel": "findings · verdicts", "pos": [790, 210], "size": [160, 60], "tag": "UNIQUE(event_id, rule)", "sources": [{ "path": "cmd/detector/main.go" }] },
+    { "id": "triage", "type": "backend", "label": "Triage", "sublabel": "Go · Gemini client", "pos": [790, 420], "size": [150, 60], "sources": [{ "path": "cmd/triage/main.go" }, { "path": "cmd/triage/verdict.go" }] },
+    { "id": "api", "type": "backend", "label": "API", "sublabel": ":8080 · 2 replicas", "pos": [1040, 210], "size": [160, 60], "sources": [{ "path": "cmd/api/main.go" }, { "path": "cmd/api/filters.go" }] },
+    { "id": "gemini", "type": "cloud", "label": "Gemini API", "sublabel": "flash-lite · free tier", "pos": [1040, 420], "size": [160, 60], "tag": "429 backoff" },
+    { "id": "operator", "type": "external", "label": "Operator", "sublabel": "curl / dashboard", "pos": [1040, 30], "size": [160, 60] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Kubernetes cluster (Docker Desktop) — also runs via Docker Compose", "wraps": ["sensor-acme", "sensor-globex", "events-q", "dlq", "detector", "triage-q", "postgres", "triage", "api"] },
+    { "kind": "region", "label": "RabbitMQ 4 broker", "wraps": ["events-q", "dlq", "triage-q"] },
+    { "kind": "security-group", "label": "Secret: gemini (GEMINI_API_KEY)", "wraps": ["triage"] }
+  ],
+  "connections": [
+    { "id": "acme-publish", "from": "sensor-acme", "to": "events-q", "label": "publish (AMQP)", "variant": "emphasis", "labelDy": -30 },
+    { "id": "globex-publish", "from": "sensor-globex", "to": "events-q", "variant": "emphasis" },
+    { "id": "consume-events", "from": "events-q", "to": "detector", "label": "consume · ack", "variant": "emphasis" },
+    { "id": "dead-letter", "from": "events-q", "to": "dlq", "label": "dead-letter", "variant": "dashed", "fromSide": "bottom", "toSide": "top", "labelDy": 24 },
+    { "id": "store-finding", "from": "detector", "to": "postgres", "label": "insert finding", "variant": "emphasis" },
+    { "id": "request-triage", "from": "detector", "to": "triage-q", "label": "triage request", "fromSide": "bottom", "toSide": "top", "labelDy": 24 },
+    { "id": "consume-triage", "from": "triage-q", "to": "triage", "label": "prefetch 1" },
+    { "id": "classify", "from": "triage", "to": "gemini", "label": "classify (HTTPS)" },
+    { "id": "write-verdict", "from": "triage", "to": "postgres", "label": "verdict UPDATE", "fromSide": "top", "toSide": "bottom", "labelDy": -50 },
+    { "id": "read-findings", "from": "api", "to": "postgres", "label": "SELECT" },
+    { "id": "rest-query", "from": "operator", "to": "api", "label": "GET /findings", "variant": "emphasis", "fromSide": "bottom", "toSide": "top", "labelDy": 24 }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Ingest & tenancy", "items": ["Sensors mock the on-host monitor; production: an MCP proxy in the agent's tool path", "Two tenants share one pipeline — customer_id travels on every event, finding, and query", "Events are transient; only findings persist"] },
+    { "dot": "emerald", "title": "Detection & delivery", "items": ["4 rules: secret_file_read, pipe_to_shell, unknown_domain, stateful exfiltration", "At-least-once: manual ack after the DB write; UNIQUE(event_id, rule) absorbs redeliveries", "Malformed messages dead-lettered; infra errors requeued"] },
+    { "dot": "violet", "title": "Triage & serving", "items": ["Rules see 100% of events; the LLM sees only rule hits; verdict UPDATEd onto the finding", "429/failure: one delayed requeue, then give up — best-effort by design", "Read-only REST with severity/customer/limit filters; CI runs go vet, test, gofmt"] }
+  ]
+}
