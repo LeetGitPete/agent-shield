@@ -10,7 +10,7 @@ export function StatsStrip({ stats, failure }: Props) {
   const dimmed = failure !== undefined;
   return (
     <section aria-label="pipeline statistics" className="mt-4">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Tile label="queue depth" value={stats?.ready.toString()} dimmed={dimmed} />
         <Tile label="detectors" value={stats?.consumers.toString()} dimmed={dimmed} />
         <Tile label="events/s in" value={stats?.publish_rate.toFixed(1)} dimmed={dimmed} />
@@ -18,11 +18,17 @@ export function StatsStrip({ stats, failure }: Props) {
       </div>
       {/* Always one line, so the page does not jump when the state changes. */}
       {dimmed ? (
-        <p role="status" className="mt-2 text-sm text-warn">
+        <p
+          role="status"
+          className="mt-2 flex items-center gap-2 text-[11px] leading-4 font-medium uppercase tracking-[0.1em] text-warn before:size-1.5 before:flex-none before:bg-current before:content-['']"
+        >
           statistics unavailable ({failure}){stats && '; showing the last values'}
         </p>
       ) : (
-        <p role="status" className={`mt-2 text-sm ${stats ? 'text-ok' : 'text-muted'}`}>
+        <p
+          role="status"
+          className={`mt-2 flex items-center gap-2 text-[11px] leading-4 font-medium uppercase tracking-[0.1em] ${stats ? 'text-ok' : 'text-muted'} before:size-1.5 before:flex-none before:bg-current before:content-['']`}
+        >
           {stats ? 'statistics live' : 'waiting for statistics'}
         </p>
       )}
@@ -38,12 +44,12 @@ function Tile({ label, value, dimmed }: { label: string; value: string | undefin
       role="group"
       aria-labelledby={labelId}
       style={{ opacity: dimmed ? 0.4 : 1 }}
-      className="border border-line bg-panel px-4 py-3 transition-opacity"
+      className="border-t border-muted/50 bg-panel px-4 pt-3 pb-3.5 transition-opacity"
     >
-      <div id={labelId} className="text-sm text-muted">
+      <div id={labelId} className="text-[11px] leading-4 font-medium uppercase tracking-[0.1em] text-muted">
         {label}
       </div>
-      <div className="mt-1 text-3xl text-ok">{value ?? '-'}</div>
+      <div className="mt-2 text-[40px] leading-[44px] font-medium tracking-[-0.02em] text-ink">{value ?? '-'}</div>
     </div>
   );
 }

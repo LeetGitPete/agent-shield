@@ -76,29 +76,36 @@ function Console() {
   const customers = useQuery({ queryKey: ['customers'], queryFn: fetchCustomers });
 
   return (
-    <main className="mx-auto max-w-[100rem] px-4 py-6">
+    <main className="mx-auto max-w-[100rem] px-6 pt-5 pb-6 text-[12px] leading-5 tabular-nums antialiased [font-variant-ligatures:none]">
       <header className="flex flex-wrap items-baseline justify-between gap-2">
-        <h1 className="text-lg text-ok">AgentShield console</h1>
-        <p className="text-xs text-muted">refreshed every {POLL_MS / 1000} s, times in UTC</p>
+        <h1 className="text-[18px] leading-6 font-bold tracking-[-0.01em] text-ink">AgentShield console</h1>
+        <p className="text-[11px] leading-4 uppercase tracking-[0.08em] text-muted">
+          refreshed every {POLL_MS / 1000} s, times in UTC
+        </p>
       </header>
 
       <StatsStrip stats={stats.data} failure={statsFailure} />
       <HistoryChart samples={history} now={statsAskedAt} />
 
-      <section aria-label="findings" className="mt-6">
+      <section aria-label="findings" className="mt-7">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
-          <h2 className="text-muted">findings, newest first</h2>
+          <h2 className="text-[12px] leading-5 font-bold uppercase tracking-[0.1em] text-ink">
+            findings, newest first
+          </h2>
           <Filters filters={filters} customers={customers.data ?? []} onChange={setFilters} />
         </div>
         {findingsFailure !== undefined && (
-          <p role="status" className="mt-2 text-sm text-warn">
+          <p
+            role="status"
+            className="mt-2 flex items-center gap-2 text-[11px] leading-4 font-medium uppercase tracking-[0.1em] text-warn before:size-1.5 before:flex-none before:bg-current before:content-['']"
+          >
             findings unavailable ({findingsFailure})
           </p>
         )}
-        <div className={`mt-2 overflow-x-auto ${findings.isPlaceholderData ? 'opacity-60' : ''}`}>
+        <div className={`mt-2.5 overflow-x-auto ${findings.isPlaceholderData ? 'opacity-60' : ''}`}>
           <FindingsTable findings={rows} />
         </div>
-        {findings.data?.length === 0 && <p className="px-3 py-4 text-sm text-dim">no findings</p>}
+        {findings.data?.length === 0 && <p className="px-2.5 py-4 text-dim">no findings</p>}
       </section>
     </main>
   );

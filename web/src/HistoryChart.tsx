@@ -1,4 +1,4 @@
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { POLL_MS } from './api';
 import { formatHourMinute, formatTime } from './format';
 import { WINDOW_MS } from './history';
@@ -57,13 +57,13 @@ export function HistoryChart({ samples, now }: Props) {
   const end = now > 0 ? now : undefined;
 
   return (
-    <figure aria-label="pipeline history" className="mt-4 border border-line bg-panel px-4 py-3">
+    <figure aria-label="pipeline history" className="mt-4 border-t border-muted/50 bg-panel px-4 pt-3 pb-2.5">
       {/* Two panels, not two scales on one plot: depth runs to thousands and
           the detector count to a handful, and a shared plot would suggest a
           relation between the two scales that is only an accident of drawing. */}
       <Panel title="queue depth" dataKey="ready" curve="linear" points={points} end={end} />
       <Panel title="detectors" dataKey="detectors" curve="stepAfter" points={points} end={end} timeAxis />
-      <figcaption className="mt-1 text-xs text-muted">
+      <figcaption className="mt-1 text-[11px] leading-4 uppercase tracking-[0.08em] text-muted">
         samples held: {samples.length} (last {WINDOW_MS / MINUTE_MS} minutes)
       </figcaption>
     </figure>
@@ -81,20 +81,40 @@ interface PanelProps {
 
 function Panel({ title, dataKey, curve, points, end, timeAxis = false }: PanelProps) {
   return (
-    <div>
-      <div className="text-sm text-muted">{title}</div>
+    <div className="not-first:mt-2.5 not-first:border-t not-first:border-line not-first:pt-2.5">
+      <div className="text-[11px] leading-4 font-medium uppercase tracking-[0.1em] text-muted">{title}</div>
       <ResponsiveContainer width="100%" height={timeAxis ? 132 : 110}>
-        <LineChart data={points} syncId="pipeline" margin={{ top: 6, right: 20, bottom: 0, left: 0 }}>
-          <CartesianGrid vertical={false} stroke="var(--color-line)" />
+        <AreaChart data={points} syncId="pipeline" margin={{ top: 6, right: 20, bottom: 0, left: 0 }}>
+          {/* The grid leaves out its line at the foot of the plot: the axis
+              line is drawn there, and the dashes would show through it. */}
+          <CartesianGrid
+            vertical={false}
+            horizontal={({ x1, y1, x2, y2, offset }) =>
+              y1 === offset.top + offset.height ? (
+                <g />
+              ) : (
+                <line
+                  x1={x1}
+                  y1={y1}
+                  x2={x2}
+                  y2={y2}
+                  stroke="var(--color-muted)"
+                  strokeOpacity={0.4}
+                  strokeDasharray="2 4"
+                />
+              )
+            }
+          />
           <XAxis
             dataKey="at"
             type="number"
             domain={end === undefined ? ['auto', 'auto'] : [end - WINDOW_MS, end]}
             ticks={end === undefined ? [] : minuteTicks(end - WINDOW_MS, end)}
             tickFormatter={formatHourMinute}
-            tick={timeAxis ? { fill: 'var(--color-muted)', fontSize: 12 } : false}
+            tick={timeAxis ? { fill: 'var(--color-muted)', fontSize: 11 } : false}
             tickLine={false}
-            axisLine={{ stroke: 'var(--color-line)' }}
+            tickMargin={4}
+            axisLine={{ stroke: 'var(--color-muted)', strokeOpacity: 0.5 }}
             height={timeAxis ? 24 : 8}
           />
           <YAxis
@@ -103,7 +123,7 @@ function Panel({ title, dataKey, curve, points, end, timeAxis = false }: PanelPr
             tickCount={3}
             interval={0}
             domain={[0, 'auto']}
-            tick={{ fill: 'var(--color-muted)', fontSize: 12 }}
+            tick={{ fill: 'var(--color-muted)', fontSize: 11 }}
             tickLine={false}
             axisLine={false}
           />
@@ -115,14 +135,16 @@ function Panel({ title, dataKey, curve, points, end, timeAxis = false }: PanelPr
             itemStyle={{ color: 'var(--color-ink)' }}
             labelFormatter={(at) => `${formatTime(Number(at))} UTC`}
           />
-          <Line
+          <Area
             name={title}
             dataKey={dataKey}
             type={curve}
             stroke="var(--color-series)"
-            strokeWidth={2}
+            strokeWidth={1.5}
             strokeLinecap="round"
             strokeLinejoin="round"
+            fill="var(--color-series)"
+            fillOpacity={0.14}
             connectNulls={false}
             isAnimationActive={false}
             activeDot={{ r: 4, stroke: 'var(--color-panel)', strokeWidth: 2 }}
@@ -134,7 +156,7 @@ function Panel({ title, dataKey, curve, points, end, timeAxis = false }: PanelPr
               )
             }
           />
-        </LineChart>
+        </AreaChart>
       </ResponsiveContainer>
     </div>
   );

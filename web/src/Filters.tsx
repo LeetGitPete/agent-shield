@@ -17,7 +17,7 @@ export function Filters({ filters, customers, onChange }: Props) {
     filters.customer && !customers.includes(filters.customer) ? [...customers, filters.customer] : customers;
 
   return (
-    <div className="flex flex-wrap gap-4 text-sm">
+    <div className="flex flex-wrap gap-x-5 gap-y-2 text-[11px] leading-4">
       <Select
         label="severity"
         value={filters.severity}
@@ -44,12 +44,12 @@ interface SelectProps {
 
 function Select({ label, value, options, onChange }: SelectProps) {
   return (
-    <label className="flex items-center gap-2 text-muted">
+    <label className="flex items-center gap-2 font-medium uppercase tracking-[0.1em] text-muted">
       {label}
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="border border-line bg-panel px-2 py-1 text-ink"
+        className="rounded-none border border-muted/50 bg-panel px-2 py-[3px] text-[12px] leading-5 font-normal normal-case tracking-normal text-ink focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-ink"
       >
         <option value="">all</option>
         {options.map((option) => (

@@ -1,23 +1,25 @@
 @import 'tailwindcss';
 
-/* A dark terminal: one typeface, and colour only where it carries a state.
+/* A dark terminal on a green-tinted ground: one typeface, and colour only
+   where it carries a state. The typeface's files are bundled with the console
+   (main.tsx imports them), so the page asks no outside host for anything.
    "static" keeps every variable in the output, because the chart reads the
    colours as CSS variables and not through utility classes. */
 @theme static {
-  --font-mono: 'Courier New', Courier, monospace;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
 
-  --color-surface: #0a0e0b;
-  --color-panel: #101511;
-  --color-line: #233027;
-  --color-ink: #d5ddd6;
-  --color-muted: #8b978e;
+  --color-surface: #06100a;
+  --color-panel: #0a1c11;
+  --color-line: #1e3d29;
+  --color-ink: #d3e6d7;
+  --color-muted: #7fa58a;
 
-  --color-ok: #4ade80; /* healthy, benign */
-  --color-bad: #f87171; /* CRITICAL, HIGH, malicious */
-  --color-warn: #fbbf24; /* MEDIUM, pending */
-  --color-dim: #6b756e; /* mock, no verdict */
+  --color-ok: #5cd894; /* healthy, benign */
+  --color-bad: #f16b67; /* CRITICAL, HIGH, malicious */
+  --color-warn: #f7d76a; /* MEDIUM, pending */
+  --color-dim: #6f8a76; /* mock, no verdict */
 
-  --color-series: #2f9fd0; /* chart lines: none of the state colours */
+  --color-series: #66b0e8; /* chart lines: none of the state colours */
 }
 
 html {
