@@ -98,7 +98,7 @@ func main() {
 		var evt event.Event
 		if err := json.Unmarshal(delivery.Body, &evt); err != nil || evt.ID == "" {
 			log.Printf("malformed event -> DLQ: %.100s", delivery.Body)
-			delivery.Nack(false, false) // no requeue: the broker dead-letters it, since a retry cannot fix bad JSON
+			delivery.Nack(false, false) // no requeue: the broker dead-letters it, since a retry cannot fix a malformed event
 			continue
 		}
 

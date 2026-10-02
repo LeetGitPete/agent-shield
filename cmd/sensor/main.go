@@ -74,7 +74,7 @@ func main() {
 
 	connection, err := amqp.Dial(amqpURL)
 	if err != nil {
-		log.Fatal("connect to rabbitmq: ", err)
+		log.Fatal("connect to rabbitmq: ", err) // the sensor is useless without the broker
 	}
 	defer connection.Close()
 
@@ -88,7 +88,6 @@ func main() {
 		log.Fatal("declare queues: ", err)
 	}
 
-	// One random event every 2 seconds.
 	for {
 		evt := randomEvent(customerID, agentID)
 		payload, err := json.Marshal(evt)

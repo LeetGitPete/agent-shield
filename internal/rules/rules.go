@@ -34,6 +34,7 @@ type Engine struct {
 	agentsThatReadSecrets map[string]bool // key "customerID/agentID" so tenants never mix
 }
 
+// NewEngine returns an engine with no secret reads recorded.
 func NewEngine() *Engine {
 	return &Engine{agentsThatReadSecrets: make(map[string]bool)}
 }

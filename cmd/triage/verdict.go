@@ -16,7 +16,7 @@ type Verdict struct {
 // markdown code fences and surrounding prose.
 func parseVerdict(llmText string) (Verdict, error) {
 	var v Verdict
-	start := strings.Index(llmText, "{") // first "{" to last "}": the prose around the object is ignored
+	start := strings.Index(llmText, "{")
 	end := strings.LastIndex(llmText, "}")
 	if start == -1 || end <= start {
 		return v, fmt.Errorf("no JSON object in LLM output: %.80s", llmText)

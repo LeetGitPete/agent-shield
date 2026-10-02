@@ -49,8 +49,7 @@ func main() {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
-		// Healthy means the database is reachable; nothing else is checked.
-		if err := db.Ping(); err != nil {
+		if err := db.Ping(); err != nil { // healthy means the database is reachable; nothing else is checked
 			http.Error(w, "db unreachable", http.StatusServiceUnavailable)
 			return
 		}

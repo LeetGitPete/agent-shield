@@ -23,7 +23,7 @@ RabbitMQ  ──rejected/malformed──▶ dead-letter queue
    │  consume
    ▼
 detector (rules engine, idempotent)
-   │  write findings          ┌─▶ Gemini LLM triage (optional)
+   │  write findings          ┌─▶ Gemini LLM triage (stretch)
    ▼                          │
 Postgres (findings only) ◀────┘
    ▲
@@ -33,7 +33,7 @@ api (REST, stdlib only) ◀── curl / browser
 
 Events are transient (queue only, never stored). Only findings persist.
 
-The pipeline is built from a message queue (RabbitMQ), separate services, Docker, Kubernetes and a CI workflow, and it is multi-tenant: one shared pipeline serves several customers.
+The pipeline is built from a message queue (RabbitMQ), microservices, Docker, Kubernetes and CI/CD, and it is multi-tenant.
 
 ## User Stories
 
@@ -48,7 +48,7 @@ The pipeline is built from a message queue (RabbitMQ), separate services, Docker
 9. As a platform operator, I want a redelivered event not to create a second finding, so that at-least-once delivery is safe.
 10. As a platform operator, I want malformed messages moved to a dead-letter queue, so that they do not block the stream.
 11. As a developer, I want the whole stack started by one compose command, so that it runs the same way on any machine.
-12. As a developer, I want CI to run vet and the tests on every push, so that regressions are caught.
+12. As a developer, I want CI to run vet and the tests, so that regressions are caught.
 13. As a platform operator, I want Kubernetes manifests for the stack, so that it runs on a cluster.
 
 ## Implementation Decisions
@@ -94,7 +94,7 @@ Go stdlib HTTP. Endpoints:
 
 Postgres, one `findings` table: id, event_id (unique), customer_id, agent_id, rule, severity, ts, details (jsonb), llm_verdict (nullable).
 
-### LLM triage
+### LLM triage (stretch, layer 4)
 
 On a rule hit, the detector sends the event and the agent's recent history to Gemini (free-tier API key) with the question "malicious or benign? severity? why?". The verdict is stored on the finding. Detection is tiered because LLM calls are too slow and costly for the full stream.
 
