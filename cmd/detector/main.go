@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -55,12 +56,24 @@ func main() {
 	postgresURL := envOr("POSTGRES_URL", "postgres://postgres:postgres@localhost:5432/agentshield")
 	redisAddr := envOr("REDIS_ADDR", "localhost:6379")
 
+	// A synthetic per-event evaluation cost. It stands in for heavier rule
+	// evaluation during load testing: with it one replica saturates at a rate
+	// small hardware can produce, so scaling out can be exercised.
+	evalDelayMs, err := strconv.Atoi(envOr("RULE_EVAL_DELAY_MS", "0"))
+	if err != nil || evalDelayMs < 0 {
+		log.Fatal("RULE_EVAL_DELAY_MS must be a whole number of milliseconds, zero or more")
+	}
+	evalDelay := time.Duration(evalDelayMs) * time.Millisecond
+
 	// The hostname is the pod name in Kubernetes, so it tells replicas apart.
 	detectorID, err := os.Hostname()
 	if err != nil {
 		log.Fatal("read hostname: ", err)
 	}
 	log.Println("detector starting, identity:", detectorID)
+	if evalDelay > 0 {
+		log.Println("synthetic evaluation cost: every event takes at least", evalDelay)
+	}
 
 	db, err := sql.Open("pgx", postgresURL)
 	if err != nil {
@@ -138,6 +151,9 @@ func main() {
 			delivery.Nack(false, true)
 			continue
 		}
+		// The evaluation cost is a minimum time per event, not an addition
+		// to the time the event really took.
+		time.Sleep(time.Until(taken.Add(evalDelay)))
 		delivery.Ack(false) // only now may the broker drop the message
 	}
 }

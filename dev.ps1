@@ -23,14 +23,34 @@
 $ErrorActionPreference = 'Stop'
 
 $Images = @('detector', 'triage', 'api', 'sensor')
-$AppDeployments = @('detector', 'triage', 'api', 'sensor-acme', 'sensor-globex')
+$AppDeployments = @('detector', 'triage', 'api', 'sensor')
 $InfraDeployments = @('rabbitmq', 'postgres', 'redis')
 $AllDeployments = $AppDeployments + $InfraDeployments
+# One sensor Deployment per customer, from before the single fleet sensor.
+$LegacySensors = @('sensor-acme', 'sensor-globex')
 $AppSelector = 'app in (' + ($AppDeployments -join ',') + ')'
-$StackSelector = 'app in (' + ($AllDeployments -join ',') + ')'
+$StackSelector = 'app in (' + (($AllDeployments + $LegacySensors) -join ',') + ')'
 $GeminiSecret = 'gemini'
 $EnvFile = Join-Path $PSScriptRoot '.env'
 $StackDownMessage = "The stack is down. 'dev.ps1 deploy' brings it up."
+
+# KEDA scales the detector. It lives in its own namespace and outlives 'down'.
+$KedaVersion = '2.21.0'
+$KedaManifest = "https://github.com/kedacore/keda/releases/download/v$KedaVersion/keda-$KedaVersion.yaml"
+$KedaNamespace = 'keda'
+$KedaMetricsApi = 'v1beta1.external.metrics.k8s.io'
+$ScaledObjectType = 'scaledobjects.keda.sh'
+$ScaledObject = 'detector'
+
+# The load levels: the sensor's average rate in events per second and the
+# probability that an event is suspicious. Low is also what the sensor's
+# manifest declares. High is 3.3 times the scaled object's rate target, so
+# its average needs four detector replicas and its peaks reach five; it
+# raises no findings.
+$LoadLevels = @{
+    low  = @{ Rate = '10'; Suspicious = '0.005' }
+    high = @{ Rate = '460'; Suspicious = '0' }
+}
 
 function Stop-Script([string]$Message) {
     Write-Host "dev.ps1: $Message"
@@ -55,10 +75,12 @@ function Show-Help {
     Write-Host ''
     Write-Host '  help             list all commands'
     Write-Host '  build            build all images with the local tag'
-    Write-Host '  deploy           build, apply the manifests, restart the applications and wait for them'
-    Write-Host '  down             remove the stack from the cluster; deploy brings it back'
-    Write-Host '  status           show the pods and the triage provider'
+    Write-Host '  deploy           build, install KEDA if missing, apply the manifests, restart the applications and wait for them'
+    Write-Host '  down             remove the stack from the cluster; deploy brings it back; down all also removes KEDA'
+    Write-Host '  status           show the pods, the autoscaler state, the load and the triage provider'
     Write-Host '  test             run the Go tests'
+    Write-Host '  load             load low|high|off: set the average load of the simulated fleet, or switch it off'
+    Write-Host '  clean            empty the queues, the shared state and the findings'
     Write-Host '  simulate-attack  publish a known attack to verify detection; flags: -agents N -gap 300ms -out-of-order -customer ID'
     Write-Host '  triage           triage mock|gemini: set the triage provider and wait for its rollout'
 }
@@ -73,6 +95,30 @@ function Assert-StackDeployed {
     if (-not (Test-StackDeployed)) {
         Stop-Script $StackDownMessage
     }
+}
+
+# Waits until no pod matches the selector.
+function Wait-NoPods([string]$Selector, [int]$Seconds) {
+    $deadline = (Get-Date).AddSeconds($Seconds)
+    while ($true) {
+        $pods = @(kubectl get pods -l $Selector --ignore-not-found -o name)
+        Assert-LastExit 'Listing the pods'
+        if ($pods.Count -eq 0) {
+            return
+        }
+        if ((Get-Date) -gt $deadline) {
+            Stop-Script "Pods are still present after $Seconds seconds: $($pods -join ', ')."
+        }
+        Start-Sleep -Seconds 2
+    }
+}
+
+# KEDA's resource type for scaled objects. On a cluster without KEDA the
+# type is unknown, and a command that names it fails.
+function Test-ScaledObjectType {
+    $type = @(kubectl get crd $ScaledObjectType --ignore-not-found -o name)
+    Assert-LastExit 'Looking for the scaled-object resource type'
+    return ($type.Count -gt 0)
 }
 
 # Compose publishes the same host ports as the cluster's load-balancer services.
@@ -173,9 +219,37 @@ function Sync-GeminiSecret {
     }
 }
 
+# Installs KEDA unless it is there already, then waits until it can serve a
+# scaled object: its Deployments and the metrics API the autoscaler reads.
+function Install-Keda {
+    $installed = Test-ScaledObjectType
+    if ($installed) {
+        $operator = @(kubectl get deployment keda-operator -n $KedaNamespace --ignore-not-found -o name)
+        Assert-LastExit 'Looking for KEDA'
+        $installed = ($operator.Count -gt 0)
+    }
+    if ($installed) {
+        Write-Host 'KEDA: already installed, so the install is skipped'
+    } else {
+        Write-Host "Installing KEDA $KedaVersion"
+        # Server-side: one of its resource definitions is too large for the
+        # annotation a client-side apply stores.
+        $applied = @(kubectl apply --server-side -f $KedaManifest)
+        Assert-LastExit 'Installing KEDA'
+        Write-Host "KEDA: applied $($applied.Count) objects"
+    }
+
+    Write-Host 'Waiting for KEDA'
+    kubectl wait --for=condition=Available deployment --all -n $KedaNamespace --timeout=300s
+    Assert-LastExit "Waiting for KEDA's Deployments (its images come from ghcr.io, so the cluster needs registry access)"
+    kubectl wait --for=condition=Available "apiservice/$KedaMetricsApi" --timeout=300s
+    Assert-LastExit "Waiting for KEDA's metrics API"
+}
+
 function Invoke-Deploy {
     Assert-ComposeDown
     Invoke-Build
+    Install-Keda
 
     Write-Host 'Applying the infrastructure'
     kubectl apply -f k8s/infra.yaml
@@ -185,11 +259,24 @@ function Invoke-Deploy {
         Assert-LastExit "Waiting for $deployment"
     }
 
-    # The manifest sets the triage provider to mock, so applying it puts a
-    # stack that was switched to gemini back on mock.
+    # The manifest sets the triage provider to mock and the sensor to the low
+    # load level, so applying it puts a stack that was switched to gemini back
+    # on mock and resets the load.
     Write-Host 'Applying the applications'
     kubectl apply -f k8s/apps.yaml
     Assert-LastExit 'Applying the applications'
+    kubectl apply -f k8s/scaledobject.yaml
+    Assert-LastExit 'Applying the scaled object'
+
+    $legacy = @(kubectl delete deployment @LegacySensors --ignore-not-found)
+    Assert-LastExit 'Removing the legacy sensor Deployments'
+    if ($legacy.Count -gt 0) {
+        foreach ($line in $legacy) {
+            Write-Host "Removed a legacy sensor: $line"
+        }
+    } else {
+        Write-Host 'No legacy sensor Deployments to remove.'
+    }
 
     # The image tag is fixed, so a rebuild does not start a rollout on its
     # own. A restarted pod pulls the current build.
@@ -206,26 +293,61 @@ function Invoke-Deploy {
     Write-Host 'The stack is up. API: http://localhost:8080  broker management: http://localhost:15672'
 }
 
-function Invoke-Down {
+# Removes the scaled object and returns kubectl's lines about it. KEDA holds
+# the object until it has removed the autoscaler it created for it, so with
+# KEDA not running the object stays. That is waited on for 30 seconds only;
+# $script:LeftoverScaledObject then tells the caller it is still there.
+function Remove-ScaledObject {
+    $script:LeftoverScaledObject = $false
+    if (-not (Test-ScaledObjectType)) {
+        return @() # KEDA is not installed, so there is no scaled object
+    }
+    $removed = @(kubectl delete scaledobject $ScaledObject --ignore-not-found --wait=false)
+    Assert-LastExit 'Removing the scaled object'
+
+    $deadline = (Get-Date).AddSeconds(30)
+    while ($true) {
+        $left = @(kubectl get scaledobject $ScaledObject --ignore-not-found -o name)
+        Assert-LastExit 'Looking for the scaled object'
+        if ($left.Count -eq 0) {
+            return $removed
+        }
+        if ((Get-Date) -gt $deadline) {
+            Write-Host "The scaled object '$ScaledObject' is still present after 30 seconds: KEDA, which has to release it, is not running. Continuing with the rest."
+            $script:LeftoverScaledObject = $true
+            return @()
+        }
+        Start-Sleep -Seconds 2
+    }
+}
+
+function Invoke-Down([string[]]$Rest) {
+    if ($Rest.Count -gt 1 -or ($Rest.Count -eq 1 -and $Rest[0] -cne 'all')) {
+        Stop-Script 'Usage: dev.ps1 down [all]'
+    }
+    $removeKeda = ($Rest.Count -eq 1)
+
+    # The scaled object goes first, so the autoscaler does not recreate detector replicas.
     $removed = @()
+    $removed += @(Remove-ScaledObject)
     $removed += @(kubectl delete -f k8s/apps.yaml --ignore-not-found)
     Assert-LastExit 'Removing the applications'
     $removed += @(kubectl delete -f k8s/infra.yaml --ignore-not-found)
     Assert-LastExit 'Removing the infrastructure'
+    $removed += @(kubectl delete deployment @LegacySensors --ignore-not-found)
+    Assert-LastExit 'Removing the legacy sensor Deployments'
     $removed += @(kubectl delete secret $GeminiSecret --ignore-not-found)
     Assert-LastExit 'Removing the Gemini secret'
 
-    $deadline = (Get-Date).AddSeconds(180)
-    while ($true) {
-        $pods = @(kubectl get pods -l $StackSelector --ignore-not-found -o name)
-        Assert-LastExit 'Listing the pods'
-        if ($pods.Count -eq 0) {
-            break
+    Wait-NoPods $StackSelector 180
+
+    if ($removeKeda -and -not $script:LeftoverScaledObject) {
+        # Removing KEDA's resource types removes every scaled object in the cluster.
+        $keda = @(kubectl delete -f $KedaManifest --ignore-not-found)
+        Assert-LastExit 'Removing KEDA'
+        if ($keda.Count -gt 0) {
+            $removed += "KEDA $KedaVersion ($($keda.Count) objects)"
         }
-        if ((Get-Date) -gt $deadline) {
-            Stop-Script "Pods are still present after 180 seconds: $($pods -join ', ')."
-        }
-        Start-Sleep -Seconds 2
     }
 
     if ($removed.Count -gt 0) {
@@ -236,7 +358,52 @@ function Invoke-Down {
     } else {
         Write-Host 'Nothing was deployed.'
     }
-    Write-Host 'The stack is down.'
+    if ($script:LeftoverScaledObject) {
+        $kedaNote = ''
+        if ($removeKeda) {
+            $kedaNote = ' KEDA was left installed, because removing it would wait on that object.'
+        }
+        Stop-Script "The stack is down except for the scaled object scaledobject.keda.sh/$ScaledObject, which KEDA has not released.$kedaNote KEDA releases it once it is running again ('kubectl get pods -n $KedaNamespace' shows its pods); then run down again."
+    }
+    if ($removeKeda) {
+        Write-Host 'The stack is down and KEDA is removed.'
+    } else {
+        Write-Host 'The stack is down.'
+    }
+}
+
+# Reads one setting of the sensor Deployment's container.
+function Get-SensorSetting([string]$Name) {
+    $value = kubectl get deployment sensor -o "jsonpath={.spec.template.spec.containers[0].env[?(@.name=='$Name')].value}"
+    Assert-LastExit "Reading $Name"
+    return [string]$value
+}
+
+function Get-SensorReplicas {
+    $replicas = kubectl get deployment sensor -o 'jsonpath={.spec.replicas}'
+    Assert-LastExit 'Reading the sensor replica count'
+    return [int]$replicas
+}
+
+# Describes the load as the sensor Deployment has it.
+function Get-LoadDescription {
+    $rate = Get-SensorSetting 'SENSOR_EVENTS_PER_SEC'
+    $suspicious = Get-SensorSetting 'SENSOR_SUSPICIOUS_PROB'
+    $customers = Get-SensorSetting 'SENSOR_CUSTOMERS'
+    $agents = Get-SensorSetting 'SENSOR_AGENTS_PER_CUSTOMER'
+    $replicas = Get-SensorReplicas
+
+    $level = 'custom'
+    foreach ($name in $LoadLevels.Keys) {
+        if ($LoadLevels[$name].Rate -eq $rate -and $LoadLevels[$name].Suspicious -eq $suspicious) {
+            $level = $name
+        }
+    }
+    $settings = "$rate events per second on average, suspicious probability $suspicious, $customers customers with $agents agents each"
+    if ($replicas -eq 0) {
+        return "off (sensor replicas: 0; its settings are $settings)"
+    }
+    return "$level ($settings; sensor replicas: $replicas)"
 }
 
 function Show-Status {
@@ -255,7 +422,34 @@ function Show-Status {
         $provider = kubectl get deployment triage -o "jsonpath={.spec.template.spec.containers[0].env[?(@.name=='TRIAGE_PROVIDER')].value}"
         Assert-LastExit 'Reading the triage provider'
     }
+
     Write-Host ''
+    Write-Host 'Autoscaler:'
+    if (-not (Test-ScaledObjectType)) {
+        Write-Host '  KEDA is not installed.'
+    } else {
+        $object = @(kubectl get scaledobject $ScaledObject --ignore-not-found -o name)
+        Assert-LastExit 'Looking for the scaled object'
+        if ($object.Count -eq 0) {
+            Write-Host "  The scaled object '$ScaledObject' is not applied."
+        } else {
+            kubectl get scaledobject $ScaledObject
+            Assert-LastExit 'Reading the scaled object'
+            # The autoscaler KEDA creates for the scaled object. Its targets
+            # are the current and the target value of each trigger.
+            kubectl get hpa "keda-hpa-$ScaledObject" --ignore-not-found
+            Assert-LastExit 'Reading the autoscaler'
+        }
+    }
+
+    $sensor = @(kubectl get deployment sensor --ignore-not-found -o name)
+    Assert-LastExit 'Looking for the sensor Deployment'
+    $load = 'the sensor Deployment is not deployed'
+    if ($sensor.Count -gt 0) {
+        $load = Get-LoadDescription
+    }
+    Write-Host ''
+    Write-Host "Load: $load"
     Write-Host "Triage provider: $provider"
 }
 
@@ -293,6 +487,102 @@ function Set-TriageProvider([string[]]$Rest) {
     Write-Host "Triage provider: $provider"
 }
 
+function Set-Load([string[]]$Rest) {
+    if ($Rest.Count -ne 1 -or @('low', 'high', 'off') -cnotcontains $Rest[0]) {
+        Stop-Script 'Usage: dev.ps1 load low|high|off'
+    }
+    $level = $Rest[0]
+    Assert-StackDeployed
+
+    if ($level -eq 'off') {
+        kubectl scale deployment/sensor --replicas=0
+        Assert-LastExit 'Scaling the sensor to zero'
+    } else {
+        $settings = $LoadLevels[$level]
+        kubectl set env deployment/sensor "SENSOR_EVENTS_PER_SEC=$($settings.Rate)" "SENSOR_SUSPICIOUS_PROB=$($settings.Suspicious)"
+        Assert-LastExit 'Setting the load'
+        kubectl scale deployment/sensor --replicas=1 # back from off
+        Assert-LastExit 'Scaling the sensor to one replica'
+    }
+    kubectl rollout status deployment/sensor --timeout=300s
+    Assert-LastExit 'Waiting for the sensor'
+    if ($level -eq 'off') {
+        Wait-NoPods 'app=sensor' 120
+    }
+    Write-Host "Load: $(Get-LoadDescription)"
+}
+
+# Returns the ready and the unacknowledged message count of a queue, read
+# with the broker's own tool in its pod. The management API would lag up to
+# five seconds behind.
+function Get-QueueCounts([string]$Queue) {
+    $lines = @(kubectl exec deployment/rabbitmq -- rabbitmqctl -q --no-table-headers list_queues name messages_ready messages_unacknowledged)
+    Assert-LastExit 'Reading the queues'
+    foreach ($line in $lines) {
+        $name, $ready, $unacknowledged = $line.Trim() -split '\s+'
+        if ($name -eq $Queue) {
+            return @([int]$ready, [int]$unacknowledged)
+        }
+    }
+    Stop-Script "The broker has no queue named $Queue."
+}
+
+function Clear-Queue([string]$Queue) {
+    kubectl exec deployment/rabbitmq -- rabbitmqctl -q purge_queue $Queue
+    Assert-LastExit "Purging the $Queue queue"
+}
+
+# Waits until the consumers of a queue hold no message any more.
+function Wait-QueueIdle([string]$Queue) {
+    $deadline = (Get-Date).AddSeconds(120)
+    while ($true) {
+        $ready, $unacknowledged = Get-QueueCounts $Queue
+        if ($unacknowledged -eq 0) {
+            return
+        }
+        if ((Get-Date) -gt $deadline) {
+            Stop-Script "The $Queue queue still has $unacknowledged unacknowledged messages after 120 seconds. 'dev.ps1 status' shows the pods."
+        }
+        Start-Sleep -Seconds 1
+    }
+}
+
+# Empties the queues, the shared state and the findings. The sensor is
+# stopped first, so nothing new arrives, and each queue is purged before its
+# consumers are waited on, so they only finish what they already hold.
+function Invoke-Clean {
+    Assert-StackDeployed
+    $sensorReplicas = Get-SensorReplicas
+
+    Write-Host 'Stopping the sensor'
+    kubectl scale deployment/sensor --replicas=0
+    Assert-LastExit 'Scaling the sensor to zero'
+    Wait-NoPods 'app=sensor' 120
+
+    Write-Host 'Emptying the queues'
+    Clear-Queue 'events'
+    Clear-Queue 'events.dlq'
+    Wait-QueueIdle 'events' # the detectors finish their events, which can still request triage
+    Clear-Queue 'triage'
+    Wait-QueueIdle 'triage' # triage finishes its findings before they are removed
+
+    Write-Host 'Emptying the shared state'
+    kubectl exec deployment/redis -- redis-cli flushall
+    Assert-LastExit 'Flushing Redis'
+
+    # A plain truncate: the id sequence goes on, so no id is used twice.
+    Write-Host 'Emptying the findings'
+    kubectl exec deployment/postgres -- psql -U postgres -d agentshield -c 'TRUNCATE findings'
+    Assert-LastExit 'Truncating the findings'
+
+    # Back to the count it had: still zero after 'load off'.
+    kubectl scale deployment/sensor "--replicas=$sensorReplicas"
+    Assert-LastExit 'Restoring the sensor'
+    kubectl rollout status deployment/sensor --timeout=300s
+    Assert-LastExit 'Waiting for the sensor'
+    Write-Host "Clean: the queues, the shared state and the findings are empty. Load: $(Get-LoadDescription)"
+}
+
 $command = 'help'
 $rest = @()
 if ($args.Count -gt 0) {
@@ -309,11 +599,13 @@ try {
         'help' { Show-Help }
         'build' { Assert-NoArguments $command $rest; Invoke-Build }
         'deploy' { Assert-NoArguments $command $rest; Invoke-Deploy }
-        'down' { Assert-NoArguments $command $rest; Invoke-Down }
+        'down' { Invoke-Down $rest }
         'status' { Assert-NoArguments $command $rest; Show-Status }
         'test' { Assert-NoArguments $command $rest; Invoke-Test }
         'simulate-attack' { Invoke-SimulateAttack $rest }
         'triage' { Set-TriageProvider $rest }
+        'load' { Set-Load $rest }
+        'clean' { Assert-NoArguments $command $rest; Invoke-Clean }
         default {
             Show-Help
             Write-Host ''

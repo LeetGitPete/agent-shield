@@ -1,0 +1,44 @@
+# Autoscaling of the detector, by KEDA ("dev.ps1 deploy" installs it). The
+# detector runs between 1 and 5 replicas, on two signals from the events
+# queue; the autoscaler follows whichever asks for more replicas.
+# Both triggers read the broker's management API. KEDA runs in its own
+# namespace, so the broker is addressed by its full service name.
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: detector
+spec:
+  scaleTargetRef:
+    name: detector
+  minReplicaCount: 1
+  maxReplicaCount: 5
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleDown:
+          # Replicas are removed only after a minute of lower load, so the
+          # count holds steady while the load rises and falls. Scale-up keeps
+          # the defaults: a large backlog takes the detector from 1 to 5 at once.
+          stabilizationWindowSeconds: 60
+  triggers:
+    # Steady state: one replica per this many events published per second.
+    # The target is 0.8 of what one replica was measured to process, 174
+    # events per second with RULE_EVAL_DELAY_MS at 5, so replicas have headroom.
+    - type: rabbitmq
+      metadata:
+        protocol: http
+        host: http://guest:guest@rabbitmq.default.svc.cluster.local:15672
+        queueName: events
+        mode: MessageRate
+        value: "140"
+    # Backlog: one replica per this many messages waiting in the queue.
+    - type: rabbitmq
+      metadata:
+        protocol: http
+        host: http://guest:guest@rabbitmq.default.svc.cluster.local:15672
+        queueName: events
+        mode: QueueLength
+        value: "100"
+        # Ready messages only. The default also counts unacknowledged ones,
+        # which would include every replica's prefetch window.
+        excludeUnacknowledged: "true"

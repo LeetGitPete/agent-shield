@@ -67,21 +67,12 @@ services:
       rabbitmq: { condition: service_healthy }
       postgres: { condition: service_healthy }
 
-  # Two sensors posing as different customers' agents.
-  sensor-acme:
+  # One sensor simulates the whole fleet of customers and agents. Its load
+  # settings are left at the code defaults: 4 customers with 10 agents each,
+  # about 10 events per second, a random load pattern.
+  sensor:
     build: { context: ., args: { SERVICE: sensor } }
     environment:
-      <<: *backend-env
-      CUSTOMER_ID: acme
-      AGENT_ID: agent-1
-    depends_on:
-      rabbitmq: { condition: service_healthy }
-
-  sensor-globex:
-    build: { context: ., args: { SERVICE: sensor } }
-    environment:
-      <<: *backend-env
-      CUSTOMER_ID: globex
-      AGENT_ID: agent-7
+      AMQP_URL: amqp://guest:guest@rabbitmq:5672/
     depends_on:
       rabbitmq: { condition: service_healthy }

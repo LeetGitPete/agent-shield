@@ -12,7 +12,9 @@ kind: Deployment
 metadata:
   name: detector
 spec:
-  replicas: 2 # the replicas share the exfiltration rule's state through Redis
+  # No replica count: the scaled object in scaledobject.yaml sets it, between
+  # 1 and 5, and applying this manifest again must not reset its decision.
+  # The replicas share the exfiltration rule's state through Redis.
   selector: { matchLabels: { app: detector } }
   template:
     metadata: { labels: { app: detector } }
@@ -25,6 +27,11 @@ spec:
             - { name: AMQP_URL, value: "amqp://guest:guest@rabbitmq:5672/" }
             - { name: POSTGRES_URL, value: "postgres://postgres:postgres@postgres:5432/agentshield" }
             - { name: REDIS_ADDR, value: "redis:6379" }
+            # A synthetic evaluation cost: every event takes at least this many
+            # milliseconds. It stands in for heavier rule evaluation, so that one
+            # replica saturates at a load small hardware can produce and
+            # autoscaling can be load tested. The code default is 0.
+            - { name: RULE_EVAL_DELAY_MS, value: "5" }
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -80,15 +87,21 @@ spec:
   ports:
     - { port: 8080 }
 ---
+# One sensor simulates the whole fleet of customers and agents. The settings
+# below are the low load level. "dev.ps1 load" changes the rate and the
+# suspicious probability on the running Deployment and "dev.ps1 deploy" puts
+# them back. SENSOR_SEED is left unset, so the load pattern is random; set it
+# to replay a pattern.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sensor-acme
+  name: sensor
 spec:
   replicas: 1
-  selector: { matchLabels: { app: sensor-acme } }
+  strategy: { type: Recreate } # a change of settings never runs two sensors at once
+  selector: { matchLabels: { app: sensor } }
   template:
-    metadata: { labels: { app: sensor-acme } }
+    metadata: { labels: { app: sensor } }
     spec:
       containers:
         - name: sensor
@@ -96,24 +109,7 @@ spec:
           imagePullPolicy: Always
           env:
             - { name: AMQP_URL, value: "amqp://guest:guest@rabbitmq:5672/" }
-            - { name: CUSTOMER_ID, value: acme }
-            - { name: AGENT_ID, value: agent-1 }
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: sensor-globex
-spec:
-  replicas: 1
-  selector: { matchLabels: { app: sensor-globex } }
-  template:
-    metadata: { labels: { app: sensor-globex } }
-    spec:
-      containers:
-        - name: sensor
-          image: agent-shield-sensor:local
-          imagePullPolicy: Always
-          env:
-            - { name: AMQP_URL, value: "amqp://guest:guest@rabbitmq:5672/" }
-            - { name: CUSTOMER_ID, value: globex }
-            - { name: AGENT_ID, value: agent-7 }
+            - { name: SENSOR_CUSTOMERS, value: "4" }
+            - { name: SENSOR_AGENTS_PER_CUSTOMER, value: "10" }
+            - { name: SENSOR_EVENTS_PER_SEC, value: "10" } # the average of the whole fleet
+            - { name: SENSOR_SUSPICIOUS_PROB, value: "0.005" } # about 3 findings a minute at this rate
