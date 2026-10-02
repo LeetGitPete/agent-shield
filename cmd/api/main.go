@@ -13,6 +13,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -34,6 +35,10 @@ type Finding struct {
 	LLMVerdict    *string    `json:"llm_verdict"`    // null when triage wrote no verdict
 	VerdictSource *string    `json:"verdict_source"` // gemini or mock; null while triage is pending
 	TriagedAt     *time.Time `json:"triaged_at"`     // null while triage is pending
+
+	// Both are null on rows stored before the columns existed.
+	DetectorID *string         `json:"detector_id"` // the detector that stored the finding
+	Evidence   json.RawMessage `json:"evidence"`    // the stored object; null for rules without evidence
 }
 
 func envOr(key, fallback string) string {
@@ -67,7 +72,7 @@ func queryFindings(db *sql.DB, filters Filters) ([]Finding, error) {
 	// two findings with the same event time never swap between requests.
 	rows, err := db.Query(`
 		SELECT id, event_id, customer_id, agent_id, rule, severity, ts, detail,
-		       llm_verdict, verdict_source, triaged_at
+		       llm_verdict, verdict_source, triaged_at, detector_id, evidence
 		FROM findings
 		WHERE ($1 = '' OR severity = $1)
 		  AND ($2 = '' OR customer_id = $2)
@@ -83,11 +88,14 @@ func queryFindings(db *sql.DB, filters Filters) ([]Finding, error) {
 	findings := []Finding{} // non-nil, so zero rows encode as [] and not null
 	for rows.Next() {
 		var finding Finding
+		var evidence []byte // nil for a NULL column, which then encodes as JSON null
 		if err := rows.Scan(&finding.ID, &finding.EventID, &finding.CustomerID, &finding.AgentID,
 			&finding.Rule, &finding.Severity, &finding.Ts, &finding.Detail,
-			&finding.LLMVerdict, &finding.VerdictSource, &finding.TriagedAt); err != nil {
+			&finding.LLMVerdict, &finding.VerdictSource, &finding.TriagedAt,
+			&finding.DetectorID, &evidence); err != nil {
 			return nil, err
 		}
+		finding.Evidence = evidence
 		findings = append(findings, finding)
 	}
 	return findings, rows.Err()

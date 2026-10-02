@@ -28,11 +28,14 @@ SELECT EXISTS (
 )`
 
 // Columns added after the first version. Added if missing, so a table
-// created by an earlier version is upgraded in place.
-const addTriageColumns = `
+// created by an earlier version is upgraded in place. Rows stored before a
+// column existed keep null in it.
+const addColumns = `
 ALTER TABLE findings
-	ADD COLUMN IF NOT EXISTS verdict_source TEXT,       -- gemini or mock; null while triage is pending
-	ADD COLUMN IF NOT EXISTS triaged_at     TIMESTAMPTZ -- null while triage is pending`
+	ADD COLUMN IF NOT EXISTS verdict_source TEXT,        -- gemini or mock; null while triage is pending
+	ADD COLUMN IF NOT EXISTS triaged_at     TIMESTAMPTZ, -- null while triage is pending
+	ADD COLUMN IF NOT EXISTS detector_id    TEXT,        -- identity of the detector that stored the finding
+	ADD COLUMN IF NOT EXISTS evidence       JSONB        -- what the finding was correlated from; null for rules without evidence`
 
 // Verdicts already in the table when the triage columns arrive were written
 // when Gemini was the only provider. Their triage time was not kept, so the
@@ -61,16 +64,16 @@ func Setup(db *sql.DB) error {
 	}
 
 	// The earlier verdicts are marked only in the transaction that adds the
-	// columns: a later start must not scan the table while it holds the lock
-	// the ALTER takes.
-	var upgraded bool
-	if err := tx.QueryRow(hasTriageColumns).Scan(&upgraded); err != nil {
+	// triage columns: a later start must not scan the table while it holds
+	// the lock the ALTER takes.
+	var hadTriageColumns bool
+	if err := tx.QueryRow(hasTriageColumns).Scan(&hadTriageColumns); err != nil {
 		return err
 	}
-	if _, err := tx.Exec(addTriageColumns); err != nil {
+	if _, err := tx.Exec(addColumns); err != nil {
 		return err
 	}
-	if !upgraded {
+	if !hadTriageColumns {
 		if _, err := tx.Exec(markEarlierVerdicts); err != nil {
 			return err
 		}

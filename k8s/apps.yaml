@@ -1,14 +1,18 @@
-# AgentShield services. Images are built locally (imagePullPolicy: Never —
-# Docker Desktop's cluster shares the local Docker daemon).
+# AgentShield services. Images are built locally with a fixed tag. The
+# cluster node keeps its own image store and pulls them through Docker
+# Desktop's local registry mirror, so the pull policy is Always: with Never
+# the node cannot see a locally built image, and with IfNotPresent it keeps
+# running the copy it pulled first after a rebuild.
+# Deploy with "dev.ps1 deploy", which builds, applies and restarts.
 # Triage runs the mock provider here. The Gemini key is only needed for the
-# gemini provider; it comes from a Secret created out-of-band:
-#   kubectl create secret generic gemini --from-env-file=.env
+# gemini provider; it comes from the Secret "gemini", which "dev.ps1 deploy"
+# creates from the local environment file.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: detector
 spec:
-  replicas: 1 # scaling this up needs shared exfiltration state (Redis) — see README
+  replicas: 2 # the replicas share the exfiltration rule's state through Redis
   selector: { matchLabels: { app: detector } }
   template:
     metadata: { labels: { app: detector } }
@@ -16,10 +20,11 @@ spec:
       containers:
         - name: detector
           image: agent-shield-detector:local
-          imagePullPolicy: Never
+          imagePullPolicy: Always
           env:
             - { name: AMQP_URL, value: "amqp://guest:guest@rabbitmq:5672/" }
             - { name: POSTGRES_URL, value: "postgres://postgres:postgres@postgres:5432/agentshield" }
+            - { name: REDIS_ADDR, value: "redis:6379" }
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -34,7 +39,7 @@ spec:
       containers:
         - name: triage
           image: agent-shield-triage:local
-          imagePullPolicy: Never
+          imagePullPolicy: Always
           env:
             - { name: AMQP_URL, value: "amqp://guest:guest@rabbitmq:5672/" }
             - { name: POSTGRES_URL, value: "postgres://postgres:postgres@postgres:5432/agentshield" }
@@ -55,7 +60,7 @@ spec:
       containers:
         - name: api
           image: agent-shield-api:local
-          imagePullPolicy: Never
+          imagePullPolicy: Always
           env:
             - { name: AMQP_URL, value: "amqp://guest:guest@rabbitmq:5672/" }
             - { name: POSTGRES_URL, value: "postgres://postgres:postgres@postgres:5432/agentshield" }
@@ -88,7 +93,7 @@ spec:
       containers:
         - name: sensor
           image: agent-shield-sensor:local
-          imagePullPolicy: Never
+          imagePullPolicy: Always
           env:
             - { name: AMQP_URL, value: "amqp://guest:guest@rabbitmq:5672/" }
             - { name: CUSTOMER_ID, value: acme }
@@ -107,7 +112,7 @@ spec:
       containers:
         - name: sensor
           image: agent-shield-sensor:local
-          imagePullPolicy: Never
+          imagePullPolicy: Always
           env:
             - { name: AMQP_URL, value: "amqp://guest:guest@rabbitmq:5672/" }
             - { name: CUSTOMER_ID, value: globex }

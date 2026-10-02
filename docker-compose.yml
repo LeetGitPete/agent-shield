@@ -23,14 +23,27 @@ services:
       timeout: 5s
       retries: 10
 
+  # Shared state of the detector's exfiltration rule; no persistence.
+  redis:
+    image: redis:8
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   detector:
     build: { context: ., args: { SERVICE: detector } }
-    environment: &backend-env
-      AMQP_URL: amqp://guest:guest@rabbitmq:5672/
-      POSTGRES_URL: postgres://postgres:postgres@postgres:5432/agentshield
+    environment:
+      <<: &backend-env
+        AMQP_URL: amqp://guest:guest@rabbitmq:5672/
+        POSTGRES_URL: postgres://postgres:postgres@postgres:5432/agentshield
+      REDIS_ADDR: redis:6379
     depends_on:
       rabbitmq: { condition: service_healthy }
       postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
 
   api:
     build: { context: ., args: { SERVICE: api } }

@@ -152,15 +152,15 @@ New settings are environment variables, following the existing convention:
 - The detector's identity is its hostname, which is the pod name in Kubernetes. It is logged at startup and used as the broker connection name.
 - Findings are stored and triage requests are built from the event the finding belongs to, not from the message being processed. The triage request format is unchanged.
 - Duplicate exfiltration findings raised by both sides are absorbed by the existing unique constraint on event and rule, and only the first insert requests triage.
-- On an infrastructure error (Redis or Postgres) the detector logs, pauses about one second and requeues the message. The pause is deliberate back-pressure.
-- The detector pings Redis at startup and exits if it is unreachable, as it already does for the broker and the database. The Redis client uses short timeouts so one stuck call cannot stall the consumer.
+- On an infrastructure error (Redis or Postgres) the detector logs, pauses and requeues the message. The pause lasts until about one second has passed since the detector took the message, so a failing dependency is retried about once a second however long the failed call took. The pause is deliberate back-pressure.
+- The detector pings Redis at startup and exits if it is unreachable, as it already does for the broker and the database. The Redis client uses short timeouts and makes a single attempt per call, so one stuck call cannot stall the consumer; the requeue is the retry.
 - RULE_EVAL_DELAY_MS gives a synthetic per-event evaluation cost in milliseconds, default 0. It stands in for heavier rule evaluation during load testing and is applied as a minimum time per event. The Kubernetes manifest sets it to 5 with a comment explaining its purpose; code and compose leave it at 0.
 - There is no graceful shutdown. When a replica is removed, the broker redelivers its unacknowledged messages; the unique constraint and the collapse by event id absorb the repeats.
 - From delivery step 3 the detector manifest sets two replicas and drops the note that pins it to one, so the cross-replica path runs in the cluster. Step 4 removes the count when the scaled object takes over.
 
 ### Schema
 
-- The findings table gains four columns: detector_id (text, the identity of the detector that stored the finding), evidence (JSON, null for rules without evidence), verdict_source (text, gemini or mock, null while pending) and triaged_at (timestamp, null while pending). The existing verdict column, llm_verdict, and its JSON field of the same name are unchanged. Rows stored before a column existed keep null in it.
+- The findings table gains four columns: detector_id (text, the identity of the detector that stored the finding), evidence (JSONB, null for rules without evidence), verdict_source (text, gemini or mock, null while pending) and triaged_at (timestamp, null while pending). The existing verdict column, llm_verdict, and its JSON field of the same name are unchanged. Rows stored before a column existed keep null in it.
 - When the triage columns are added, rows that already hold a verdict were written by Gemini: schema setup gives them verdict_source gemini and triaged_at equal to the event time.
 - Evidence for an exfiltration finding has the keys read_event_id, read_ts, read_path, read_detector_id (the detector that processed the read), request_detector_id (the detector that processed the request) and raised_by (read or request: which of the two events was processed second and so raised the finding).
 - Schema setup runs in one transaction under a database advisory lock: create the table if missing, then add each new column if missing. This makes concurrent startup safe and upgrades an existing table in place.
