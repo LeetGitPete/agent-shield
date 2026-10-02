@@ -76,3 +76,12 @@ services:
       AMQP_URL: amqp://guest:guest@rabbitmq:5672/
     depends_on:
       rabbitmq: { condition: service_healthy }
+
+  # The web console on http://localhost:3000: nginx serves the built page and
+  # proxies the api path prefix to the api service.
+  console:
+    build: ./web
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api # nginx resolves the name when it starts

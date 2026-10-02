@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="generator" content="archify 2.17.0-dev.1">
-  <title>AgentShield — Runtime Security Pipeline for AI Agents Diagram</title>
+  <title>AgentShield: runtime security pipeline for AI agents Diagram</title>
   <script>
     // Resolve the theme before first paint so light-preference users don't
     // see a dark flash. The toolbar script below re-applies with UI state.
@@ -4955,12 +4955,12 @@
            data-preset-badge-blueprint="BLUEPRINT / REV 01"
            data-preset-badge-editorial="EDITORIAL / FIELD NOTE">
         <div class="pulse-dot"></div>
-        <h1>AgentShield — Runtime Security Pipeline for AI Agents</h1>
+        <h1>AgentShield: runtime security pipeline for AI agents</h1>
       </div>
     </div>
 
-    <script id="archify-guided-views-data" type="application/json">[{"id":"main-pipeline","label":"Main pipeline","focus":["sensor-acme","sensor-globex","events-q","detector","postgres","api","operator"],"note":"Tool-call events flow from agent sensors through the queue and rules engine into durable findings."},{"id":"reliability","label":"Delivery guarantees","focus":["events-q","dlq","detector","postgres"],"note":"At-least-once: manual acks, poison messages dead-lettered, duplicates absorbed by a unique constraint."},{"id":"triage-loop","label":"LLM triage loop","focus":["detector","triage-q","triage","gemini","postgres"],"note":"Only rule hits reach the LLM; verdicts land back on the finding row."},{"id":"tenancy","label":"Multi-tenancy","focus":["sensor-acme","sensor-globex","api"],"note":"One shared pipeline; customer_id travels with every event, finding, and API query."}]</script>
-    <script id="archify-source-evidence-data" type="application/json">{"schemaVersion":1,"verified":true,"repository":{"url":"https://github.com/LeetGitPete/agent-shield","revision":"4cc2070f4c2d2b442d038d6959a46b958a8e1e3e","shortRevision":"4cc2070"},"referenceCount":12,"nodes":{"sensor-acme":[{"path":"cmd/sensor/main.go","href":"https://github.com/LeetGitPete/agent-shield/blob/4cc2070f4c2d2b442d038d6959a46b958a8e1e3e/cmd/sensor/main.go"}],"sensor-globex":[{"path":"cmd/sensor/main.go","href":"https://github.com/LeetGitPete/agent-shield/blob/4cc2070f4c2d2b442d038d6959a46b958a8e1e3e/cmd/sensor/main.go"}],"events-q":[{"path":"internal/mq/mq.go","href":"https://github.com/LeetGitPete/agent-shield/blob/4cc2070f4c2d2b442d038d6959a46b958a8e1e3e/internal/mq/mq.go"}],"dlq":[{"path":"internal/mq/mq.go","href":"https://github.com/LeetGitPete/agent-shield/blob/4cc2070f4c2d2b442d038d6959a46b958a8e1e3e/internal/mq/mq.go"}],"detector":[{"path":"cmd/detector/main.go","href":"https://github.com/LeetGitPete/agent-shield/blob/4cc2070f4c2d2b442d038d6959a46b958a8e1e3e/cmd/detector/main.go"},{"path":"internal/rules/rules.go","href":"https://github.com/LeetGitPete/agent-shield/blob/4cc2070f4c2d2b442d038d6959a46b958a8e1e3e/internal/rules/rules.go"}],"triage-q":[{"path":"internal/mq/mq.go","href":"https://github.com/LeetGitPete/agent-shield/blob/4cc2070f4c2d2b442d038d6959a46b958a8e1e3e/internal/mq/mq.go"}],"postgres":[{"path":"cmd/detector/main.go","href":"https://github.com/LeetGitPete/agent-shield/blob/4cc2070f4c2d2b442d038d6959a46b958a8e1e3e/cmd/detector/main.go"}],"triage":[{"path":"cmd/triage/main.go","href":"https://github.com/LeetGitPete/agent-shield/blob/4cc2070f4c2d2b442d038d6959a46b958a8e1e3e/cmd/triage/main.go"},{"path":"cmd/triage/verdict.go","href":"https://github.com/LeetGitPete/agent-shield/blob/4cc2070f4c2d2b442d038d6959a46b958a8e1e3e/cmd/triage/verdict.go"}],"api":[{"path":"cmd/api/main.go","href":"https://github.com/LeetGitPete/agent-shield/blob/4cc2070f4c2d2b442d038d6959a46b958a8e1e3e/cmd/api/main.go"},{"path":"cmd/api/filters.go","href":"https://github.com/LeetGitPete/agent-shield/blob/4cc2070f4c2d2b442d038d6959a46b958a8e1e3e/cmd/api/filters.go"}]}}</script>
+    <script id="archify-guided-views-data" type="application/json">[{"id":"event-path","label":"Event path","focus":["sensor","events-q","detector","postgres","api","console","browser"],"note":"Tool-call events flow from the sensor fleet through the queue and the rules engine into findings the console shows."},{"id":"scaling","label":"Scaling and shared state","focus":["mgmt","keda","detector","redis"],"note":"KEDA sizes the detector from the queue's rate and backlog; the replicas share the exfiltration state in Redis."},{"id":"delivery","label":"Delivery guarantees","focus":["events-q","dlq","detector","postgres"],"note":"At-least-once: manual acks, malformed messages dead-lettered, repeats absorbed by a unique constraint."},{"id":"triage-loop","label":"Triage","focus":["detector","triage-q","triage","mock","gemini","postgres"],"note":"Only rule hits reach triage. The mock provider is the default; Gemini is switched on explicitly."},{"id":"observation","label":"Observation","focus":["mgmt","api","console","browser"],"note":"The API serves findings and queue statistics; the console polls it every two seconds."}]</script>
+    <script id="archify-source-evidence-data" type="application/json">{"schemaVersion":1,"verified":true,"repository":{"url":"https://github.com/LeetGitPete/agent-shield","revision":"8dbc502dbedfe92f1237ec56eacd63a591f577d0","shortRevision":"8dbc502"},"referenceCount":19,"nodes":{"sensor":[{"path":"cmd/sensor/main.go","href":"https://github.com/LeetGitPete/agent-shield/blob/8dbc502dbedfe92f1237ec56eacd63a591f577d0/cmd/sensor/main.go"},{"path":"cmd/sensor/generator.go","href":"https://github.com/LeetGitPete/agent-shield/blob/8dbc502dbedfe92f1237ec56eacd63a591f577d0/cmd/sensor/generator.go"}],"events-q":[{"path":"internal/mq/mq.go","href":"https://github.com/LeetGitPete/agent-shield/blob/8dbc502dbedfe92f1237ec56eacd63a591f577d0/internal/mq/mq.go"}],"dlq":[{"path":"internal/mq/mq.go","href":"https://github.com/LeetGitPete/agent-shield/blob/8dbc502dbedfe92f1237ec56eacd63a591f577d0/internal/mq/mq.go"}],"detector":[{"path":"cmd/detector/main.go","href":"https://github.com/LeetGitPete/agent-shield/blob/8dbc502dbedfe92f1237ec56eacd63a591f577d0/cmd/detector/main.go"},{"path":"internal/rules/rules.go","href":"https://github.com/LeetGitPete/agent-shield/blob/8dbc502dbedfe92f1237ec56eacd63a591f577d0/internal/rules/rules.go"}],"redis":[{"path":"internal/rules/redis_store.go","href":"https://github.com/LeetGitPete/agent-shield/blob/8dbc502dbedfe92f1237ec56eacd63a591f577d0/internal/rules/redis_store.go"}],"keda":[{"path":"k8s/scaledobject.yaml","href":"https://github.com/LeetGitPete/agent-shield/blob/8dbc502dbedfe92f1237ec56eacd63a591f577d0/k8s/scaledobject.yaml"}],"mgmt":[{"path":"k8s/infra.yaml","href":"https://github.com/LeetGitPete/agent-shield/blob/8dbc502dbedfe92f1237ec56eacd63a591f577d0/k8s/infra.yaml"}],"postgres":[{"path":"internal/schema/schema.go","href":"https://github.com/LeetGitPete/agent-shield/blob/8dbc502dbedfe92f1237ec56eacd63a591f577d0/internal/schema/schema.go"}],"api":[{"path":"cmd/api/routes.go","href":"https://github.com/LeetGitPete/agent-shield/blob/8dbc502dbedfe92f1237ec56eacd63a591f577d0/cmd/api/routes.go"},{"path":"cmd/api/main.go","href":"https://github.com/LeetGitPete/agent-shield/blob/8dbc502dbedfe92f1237ec56eacd63a591f577d0/cmd/api/main.go"},{"path":"cmd/api/stats.go","href":"https://github.com/LeetGitPete/agent-shield/blob/8dbc502dbedfe92f1237ec56eacd63a591f577d0/cmd/api/stats.go"}],"triage-q":[{"path":"internal/mq/mq.go","href":"https://github.com/LeetGitPete/agent-shield/blob/8dbc502dbedfe92f1237ec56eacd63a591f577d0/internal/mq/mq.go"}],"triage":[{"path":"cmd/triage/main.go","href":"https://github.com/LeetGitPete/agent-shield/blob/8dbc502dbedfe92f1237ec56eacd63a591f577d0/cmd/triage/main.go"},{"path":"cmd/triage/provider.go","href":"https://github.com/LeetGitPete/agent-shield/blob/8dbc502dbedfe92f1237ec56eacd63a591f577d0/cmd/triage/provider.go"},{"path":"cmd/triage/outcome.go","href":"https://github.com/LeetGitPete/agent-shield/blob/8dbc502dbedfe92f1237ec56eacd63a591f577d0/cmd/triage/outcome.go"}],"mock":[{"path":"cmd/triage/provider.go","href":"https://github.com/LeetGitPete/agent-shield/blob/8dbc502dbedfe92f1237ec56eacd63a591f577d0/cmd/triage/provider.go"}],"gemini":[{"path":"cmd/triage/gemini.go","href":"https://github.com/LeetGitPete/agent-shield/blob/8dbc502dbedfe92f1237ec56eacd63a591f577d0/cmd/triage/gemini.go"}]}}</script>
     <script id="archify-i18n-data" type="application/json">{"locale":"en","messages":{"viewer.kind.frontend":"Frontend","viewer.kind.backend":"Backend","viewer.kind.database":"Database","viewer.kind.cloud":"Cloud","viewer.kind.security":"Security","viewer.kind.messagebus":"Message bus","viewer.kind.external":"External","viewer.kind.neutral":"Neutral","viewer.kind.node":"Node","viewer.kind.start":"Start","viewer.kind.active":"Active","viewer.kind.waiting":"Waiting","viewer.kind.decision":"Decision","viewer.kind.success":"Success","viewer.kind.failure":"Failure","viewer.toolbar.actions":"Diagram actions","viewer.theme.toggle.title":"Toggle theme (T)","viewer.theme.toggle":"Toggle color theme","viewer.theme.dark":"Dark","viewer.theme.light":"Light","viewer.preset.choose.title":"Choose visual style (S cycles)","viewer.preset.choose":"Choose visual style","viewer.preset.style":"Style","viewer.preset.menu":"Visual style","viewer.preset.identity":"Visual identity","viewer.preset.cycles":"S cycles","viewer.preset.classic":"Classic","viewer.preset.classic.short":"Classic","viewer.preset.classic.hint":"Stable technical default","viewer.preset.flow":"Signal Flow","viewer.preset.flow.short":"Flow","viewer.preset.flow.hint":"Motion-forward presentation","viewer.preset.blueprint":"Blueprint","viewer.preset.blueprint.hint":"Engineering review","viewer.preset.editorial":"Editorial","viewer.preset.editorial.hint":"Publication and launch notes","viewer.preset.badge.signalFlow":"SIGNAL FLOW","viewer.preset.badge.blueprint":"BLUEPRINT / REV 01","viewer.preset.badge.editorial":"EDITORIAL / FIELD NOTE","viewer.preset.badge.editorialPlate":"ARCHIFY / PLATE 04","viewer.preset.current":"Visual style: {style}. Choose visual style","viewer.motion.live":"Live","viewer.motion.still":"Still","viewer.motion.pause":"Pause motion","viewer.motion.resume":"Resume motion","viewer.motion.reduced":"Motion paused by reduced-motion preference","viewer.motion.hidden":"Motion paused while this page is hidden","viewer.motion.yielding":"Pause motion; currently yielding to {owner}","viewer.motion.yielding.title":"Live preview enabled · yielding to {owner}","viewer.owner.story":"the guided story","viewer.owner.chapter":"the active chapter","viewer.owner.chapterPreview":"the chapter delta preview","viewer.owner.handoff":"the chapter handoff","viewer.owner.route":"Route Probe","viewer.owner.lens":"Semantic Lens","viewer.owner.relationship":"Relationship Preview","viewer.owner.intent":"Intent Trace","viewer.owner.focus":"semantic focus","viewer.owner.legend":"legend preview","viewer.owner.reader":"reader interaction","viewer.present.enter":"Enter presentation stage","viewer.present.enter.title":"Presentation stage (F)","viewer.present.exit":"Exit presentation stage","viewer.present.exit.title":"Exit presentation stage (F or Escape)","viewer.present.present":"Present","viewer.present.exit.label":"Exit","viewer.export.button":"Export","viewer.export.button.title":"Export diagram (E)","viewer.export.diagram":"Export diagram","viewer.export.menu":"Export","viewer.export.subtitle":"Portable, clean outputs","viewer.export.share":"Share","viewer.export.shareCard":"Share Card","viewer.export.routeShareCard":"Route Share Card","viewer.export.reachShareCard":"Reach Share Card","viewer.export.copyShareCard":"Copy Share Card","viewer.export.copyDiagram":"Copy diagram","viewer.export.clipboardPng":"PNG to clipboard","viewer.export.raster":"Raster images","viewer.export.image":"Image","viewer.export.lossless":"Lossless image","viewer.export.compact":"Compact image","viewer.export.modern":"Modern image","viewer.export.vectorMotion":"Vector and motion","viewer.export.vectorMotion.heading":"Vector \u0026 motion","viewer.export.editable":"Editable vector","viewer.export.motion6s":"6s motion","viewer.export.unsupported":"Not supported by this browser","viewer.export.clipboardUnsupported":"Clipboard image write not supported by this browser","viewer.export.clipboardUnsupported.period":"Clipboard image write not supported by this browser.","viewer.export.clipboardUnsupported.short":"Clipboard image write not supported in this browser.","viewer.export.motionUnavailable":"Motion capture unavailable in this browser","viewer.export.webmUnavailable":"WebM unavailable in this browser","viewer.export.failed":"Export failed: {message}","viewer.export.unknownVariant":"Unknown Share Card variant: {variant}","viewer.export.routeRequired":"Trace a route before exporting a Route Share Card","viewer.export.reachRequired":"Trace authored reach before exporting a Reach Share Card","viewer.export.unknown":"unknown","viewer.export.routeFailed":"Route Share Card export failed: {message}","viewer.export.reachFailed":"Reach Share Card export failed: {message}","viewer.export.copyFailed":"Copy failed: {message}","viewer.export.copiedPng":"Copied PNG to clipboard","viewer.export.copiedShare":"Copied Share Card","viewer.export.downloadedShare":"Downloaded Share Card","viewer.export.downloadedRoute":"Downloaded Route Share Card","viewer.export.downloadedReach":"Downloaded Reach Share Card","viewer.export.downloadedWebm":"Downloaded WebM","viewer.export.recording":"Recording 6 seconds of motion…","viewer.export.card.routeSummary.one":"Route: {source} → {target} · {count} directed hop","viewer.export.card.routeSummary.other":"Route: {source} → {target} · {count} directed hops","viewer.export.card.reachSummary":"Authored {direction} from {origin} · {nodes} · {links} · max {hops}","viewer.export.card.node.one":"{count} node","viewer.export.card.node.other":"{count} nodes","viewer.export.card.link.one":"{count} link","viewer.export.card.link.other":"{count} links","viewer.export.card.hop.one":"{count} hop","viewer.export.card.hop.other":"{count} hops","viewer.export.card.routeBadge":"ARCHIFY · ROUTE · {hops}","viewer.export.card.reachBadge":"ARCHIFY · {direction} REACH","viewer.export.card.defaultBadge":"ARCHIFY · {preset} · {theme}","viewer.export.direction.upstream":"Upstream","viewer.export.direction.downstream":"Downstream","viewer.export.error.canvasUnavailable":"Canvas unavailable for {label}","viewer.export.error.contextUnavailable":"2D canvas context unavailable for {label}","viewer.export.error.toBlobUnavailable":"canvas.toBlob unavailable for {label}","viewer.export.error.toBlobNull":"canvas.toBlob returned no data for {label}","viewer.export.error.variantsCombined":"Share Card variants cannot be combined","viewer.export.error.viewerState":"Share Card export could not remove temporary viewer state","viewer.export.error.routeState":"Route Card export could not preserve the resolved route safely","viewer.export.error.reachState":"Reach Card export could not preserve authored reach safely","viewer.export.error.webmRequirements":"WebM motion export requires a trace animation and browser MediaRecorder support","viewer.export.error.mediaRecorder":"MediaRecorder failed","viewer.export.error.emptyWebm":"MediaRecorder produced an empty WebM","viewer.export.error.webmBackground":"SVG background could not be loaded for WebM export","viewer.guided.region":"Guided diagram views","viewer.guided.previous":"Previous guided view","viewer.guided.previous.title":"Previous guided view ([)","viewer.guided.next":"Next guided view","viewer.guided.next.title":"Next guided view (])","viewer.guided.views":"Guided views","viewer.guided.explore":"Explore this system","viewer.guided.intro":"Step through curated paths without changing the source diagram.","viewer.guided.trail":"Story trail","viewer.guided.beat":"Beat","viewer.guided.nextBeat":"Next","viewer.guided.play":"Play guided story","viewer.guided.play.title":"Play guided story (P)","viewer.guided.pause":"Pause guided story","viewer.guided.pause.title":"Pause guided story (P)","viewer.guided.replay":"Replay guided story","viewer.guided.replay.title":"Replay guided story (P)","viewer.guided.playStory":"Play story","viewer.guided.pauseStory":"Pause","viewer.guided.replayStory":"Replay story","viewer.guided.motionUnavailable":"Story playback unavailable while motion is Still","viewer.guided.enableMotion":"Switch motion to Live to play the guided story","viewer.guided.selectBeatLink":"Select a Story Beat to copy its exact link","viewer.guided.copyMoment":"Copy moment","viewer.guided.momentCopied":"Moment link copied","viewer.guided.momentCopyFailed":"Could not copy story moment link","viewer.guided.copied":"Copied","viewer.guided.copyFailed":"Copy failed","viewer.guided.showAll":"Show all","viewer.guided.showAll.aria":"Show entire diagram","viewer.guided.chapters":"Story chapters","viewer.guided.storyTrail":"Story trail for {label}: {count} beats","viewer.guided.chapter.open":"Open chapter {index} of {total}: {label}, {count} stops","viewer.guided.chapter.current":"Current chapter {index} of {total}: {label}, {count} stops","viewer.guided.chapter.selectedNodes":"{count} selected nodes","viewer.guided.chapter.stops":"{count} stops","viewer.guided.chapter.stop.one":"{count} stop","viewer.guided.chapter.stop.other":"{count} stops","viewer.guided.chapter.current.title":"{label} — current chapter, {count} stops","viewer.guided.chapter.delta.expanded":"{stay} stay, {enter} enter, {leave} leave","viewer.guided.chapter.delta.aria":"Open chapter {index} of {total}: {label}. Chapter focus delta: {delta}","viewer.guided.chapter.delta.title":"{label} — {delta} chapter focus","viewer.guided.handoff":"{from} → {to} · via {label}","viewer.guided.share.chapter":"Chapter {index} / {total}","viewer.guided.share.initial":"Chapter 01 / 01","viewer.guided.share.default":"Guided chapter","viewer.guided.state.ready":"Ready","viewer.guided.state.playing":"Playing","viewer.guided.state.settled":"Settled","viewer.guided.state.paused":"Paused","viewer.guided.state.pinned":"Pinned","viewer.guided.state.still":"Still","viewer.guided.share.step":"Step {index} / {total} · {label}","viewer.guided.share.staticMoment":"{step} · Static moment","viewer.guided.share.complete":"{count} steps complete · {note}","viewer.guided.share.settled":"Path settled for reading.","viewer.guided.share.staticPath":"{count} steps · Static path","viewer.guided.share.ready":"{count} steps · Ready","viewer.guided.share.aria":"{state} chapter {index} of {total}: {label}. {beat}. {route}","viewer.guided.beat.start":"Beat {index} / {total} · {label} · starting point","viewer.guided.beat.forward":"Beat {index} / {total} · {from} → {to}","viewer.guided.beat.reverse":"Beat {index} / {total} · {from} → {to} · reverse authored link","viewer.guided.beat.multiple":"Beat {index} / {total} · {from} ⇄ {to} · {count} authored links","viewer.guided.beat.group":"Beat {index} / {total} · {from} · {to} · grouped · no direct link","viewer.guided.beat.aria.prefix":"Story beat {index} of {total}: {label}. ","viewer.guided.beat.aria.start":"Starting point.","viewer.guided.beat.aria.forward":"From {from} through one authored forward relationship.","viewer.guided.beat.aria.reverse":"From {from}; the authored relationship points from {to} to {from}.","viewer.guided.beat.aria.multiple":"From {from} through {count} authored relationships; shown without arbitrary motion.","viewer.guided.beat.aria.group":"Grouped from {from} with no direct authored relationship.","viewer.guided.caption.start":"Starting point","viewer.guided.caption.grouped":"Grouped transition · no direct authored link","viewer.guided.caption.more":" +{count} more","viewer.guided.caption.reverse":"Reverse authored relationship","viewer.guided.caption.relationships":"{count} authored relationships","viewer.guided.caption.relationship":"Authored relationship","viewer.guided.caption.direction":"authored direction: {from} → {to}","viewer.guided.caption.starting":"Authored starting point","viewer.guided.beatLink":"Copy link to current story moment: Beat {index} of {total}: {label}","viewer.guided.noStory":"This diagram has no authored guided story.","viewer.guide.eyebrow":"Diagram guide","viewer.guide.close":"Close diagram guide","viewer.guide.inspecting":"Inspecting compiled semantics","viewer.guide.actions":"Diagram exploration actions","viewer.guide.find":"Find any node","viewer.guide.find.hint":"Search labels, responsibilities, kinds, and stable IDs.","viewer.guide.route":"Trace a route","viewer.guide.route.aria":"Trace a directed route","viewer.guide.route.hint":"Ask how two semantic nodes connect in authored direction.","viewer.guide.map":"See the whole system","viewer.guide.map.hint":"Open Semantic Radar with a live viewport and stable nodes.","viewer.guide.lens":"Compare semantic kinds","viewer.guide.lens.hint":"Count roles, reveal their traffic, and compare direct authored links.","viewer.guide.story":"Play the guided story","viewer.guide.story.hint":"Walk the authored chapters and real relationships.","viewer.guide.present":"Enter Presentation Stage","viewer.guide.present.hint":"Give the live diagram the viewport without changing export.","viewer.guide.shortcuts":"Additional keyboard shortcuts","viewer.guide.shortcut.export":"Export","viewer.guide.shortcut.theme":"Theme","viewer.guide.shortcut.style":"Style","viewer.guide.shortcut.reset":"Reset","viewer.guide.shortcut.zoomIn":"Zoom in","viewer.guide.shortcut.zoomOut":"Zoom out","viewer.guide.shortcut.close":"Close","viewer.guide.facts":"{nodes} · {relationships} · {views}","viewer.guide.fact.node.one":"{count} semantic node","viewer.guide.fact.node.other":"{count} semantic nodes","viewer.guide.fact.relationship.one":"{count} relationship","viewer.guide.fact.relationship.other":"{count} relationships","viewer.guide.fact.view.one":"{count} guided view","viewer.guide.fact.view.other":"{count} guided views","viewer.guide.story.available.one":"Walk {count} authored chapter and its real relationships.","viewer.guide.story.available.other":"Walk {count} authored chapters and their real relationships.","viewer.guide.story.unavailable":"No authored guided story in this diagram.","viewer.guide.open":"Open diagram guide","viewer.guide.noStory":"This diagram has no authored guided story.","viewer.finder.title":"Find a node","viewer.finder.close":"Close node finder","viewer.finder.placeholder":"Search labels or IDs","viewer.finder.search":"Search diagram nodes","viewer.finder.results":"Diagram nodes","viewer.finder.empty":"No matching nodes","viewer.finder.result.focus":"Focus {label}","viewer.finder.result.routeStart":"Choose {label} as route start","viewer.finder.result.routeTarget":"Choose {label} as route destination, {links}","viewer.finder.status.empty":"No matching nodes","viewer.finder.status.count.one":"{count} matching node","viewer.finder.status.count.other":"{count} matching nodes","viewer.finder.noun.nodes":"nodes","viewer.finder.link.one":"{count} link","viewer.finder.link.other":"{count} links","viewer.finder.result.focus.one":"Focus {label}, {count} related connection","viewer.finder.result.focus.other":"Focus {label}, {count} related connections","viewer.finder.status.filtered":"{visible} of {available} {noun}","viewer.finder.status.all":"{available} {noun}","viewer.passport.eyebrow":"Semantic passport","viewer.passport.metadata":"Node metadata","viewer.passport.evidence":"Verified source evidence","viewer.passport.verified":"Verified source","viewer.passport.reach":"Authored reach","viewer.passport.reach.trace":"Trace authored reachability","viewer.passport.upstream":"Upstream","viewer.passport.downstream":"Downstream","viewer.passport.upstream.trace":"Trace upstream authored reachability","viewer.passport.downstream.trace":"Trace downstream authored reachability","viewer.passport.close":"Close semantic passport","viewer.passport.copy":"Copy link","viewer.passport.copy.focus":"Copy link to focused node","viewer.passport.relations":"Relations","viewer.passport.relations.show":"Show connected relationships","viewer.passport.relations.hide":"Hide connected relationships","viewer.passport.relations.list":"Connected relationships","viewer.passport.copyRelation":"Copy relation","viewer.passport.copyNode":"Copy node","viewer.passport.copyPinned":"Copy link to pinned relationship","viewer.passport.copySource":"Copy link to source node","viewer.passport.copy.focused.success":"Focused node link copied","viewer.passport.copy.pinned.success":"Pinned relationship link copied","viewer.passport.copy.focused.failed":"Could not copy focused node link","viewer.passport.copy.pinned.failed":"Could not copy pinned relationship link","viewer.passport.relationship.none":"No connected relationships","viewer.passport.relationship.count.one":"{count} relation","viewer.passport.relationship.count.other":"{count} relations","viewer.passport.relationship.show.one":"Show {count} connected relationship","viewer.passport.relationship.show.other":"Show {count} connected relationships","viewer.passport.relationship.summary":"{out} outgoing · {in} incoming{loops}","viewer.passport.relationship.loops":" · {count} loop","viewer.passport.relationship.explorer":"Direct relationship explorer","viewer.passport.relationship.help":"Use arrow keys to explore relationships. Press Enter or Space to pin details; Escape clears.","viewer.passport.relationship.loopsBack":"loops back","viewer.passport.relationship.connectsTo":"connects to","viewer.passport.relationship.connectsFrom":"connects from","viewer.passport.relationship.pinned":"Pinned relationship · {from} → {to} · {label}","viewer.passport.relationship.inspect":"Inspect relationship {index} of {total}: {from} to {to}, {label}. Press Enter for details.","viewer.passport.relationship.group.out":"Outgoing","viewer.passport.relationship.group.in":"Incoming","viewer.passport.relationship.group.loop":"Self loops","viewer.passport.relationship.row":"{group}: {relationship}, {neighbor}","viewer.passport.relationship.direction.out":"OUT →","viewer.passport.relationship.direction.in":"← IN","viewer.passport.relationship.direction.loop":"LOOP","viewer.passport.sourceCount.one":"{count} verified source reference","viewer.passport.sourceCount.other":"{count} verified source references","viewer.passport.sourceMarker":"SRC","viewer.passport.beacon.one":"{count} verified source; focus this node to inspect","viewer.passport.beacon.other":"{count} verified sources; focus this node to inspect","viewer.passport.repository.open":"Open verified repository revision {revision}","viewer.passport.source.open":"Open verified source {path} at revision {revision}","viewer.passport.source.openLink":"Open ↗","viewer.passport.reach.upstream.one":"Trace {count} upstream authored node","viewer.passport.reach.upstream.other":"Trace {count} upstream authored nodes","viewer.passport.reach.downstream.one":"Trace {count} downstream authored node","viewer.passport.reach.downstream.other":"Trace {count} downstream authored nodes","viewer.passport.reach.noUpstream":"No upstream authored nodes","viewer.passport.reach.noDownstream":"No downstream authored nodes","viewer.passport.reach.status":"{direction} · {nodes} nodes · {links} links · max {hops} hops","viewer.route.eyebrow":"Route probe","viewer.route.start":"Choose a start node","viewer.route.start.find":"Find start","viewer.route.start.find.aria":"Find a route start","viewer.route.copy":"Copy link","viewer.route.copy.aria":"Copy link to traced route","viewer.route.clear":"Clear","viewer.route.clear.aria":"Clear route probe","viewer.route.traced":"Traced route","viewer.route.pickTwo":"Pick two semantic nodes on the diagram","viewer.route.pickOne":"Pick a semantic node on the diagram","viewer.route.controls":"Route journey controls","viewer.route.previous":"Previous route position","viewer.route.play":"Play route journey","viewer.route.pause":"Pause route journey","viewer.route.replay":"Replay route journey","viewer.route.next":"Next route position","viewer.route.journey":"Journey","viewer.route.pause.label":"Pause","viewer.route.replay.label":"Replay","viewer.route.overview":"Overview","viewer.route.overview.aria":"Show complete route overview","viewer.route.instructions":"Choose the source, then the destination. Direction matters.","viewer.route.destination":"Choose a destination from {label}","viewer.route.destination.find":"Find target","viewer.route.destination.find.aria":"Find a reachable route destination","viewer.route.differentDestination":"Choose a different destination","viewer.route.distinct":"A route needs two distinct semantic nodes.","viewer.route.unreachable":"No directed route to {label}","viewer.route.unreachable.detail":"{target} is not reachable from {source}. Pick a highlighted destination.","viewer.route.start.instructions":"Select the source. The next step will reveal only directed destinations.","viewer.route.copy.success":"Traced route link copied","viewer.route.copy.failed":"Could not copy traced route link","viewer.route.position":"Route position {index} of {total}: {label}","viewer.route.step":"Step {index} of {total} · {phase} · {label}","viewer.route.motionRequired":"Automatic journey requires Live motion","viewer.route.trigger.clear":"Clear traced route","viewer.route.overview.status":"{nodes} · {hops} · shortest authored route","viewer.route.overview.node.one":"{count} node","viewer.route.overview.node.other":"{count} nodes","viewer.route.overview.hop.one":"{count} directed hop","viewer.route.overview.hop.other":"{count} directed hops","viewer.route.phase.playing":"Playing","viewer.route.phase.complete":"Complete","viewer.route.phase.inspecting":"Inspecting","viewer.route.destination.count.one":"{count} directed destination available. Pick a highlighted node.","viewer.route.destination.count.other":"{count} directed destinations available. Pick a highlighted node.","viewer.route.noOutgoing":"No outgoing route starts here. Clear and choose another source.","viewer.route.result.title":"{source} to {target}","viewer.route.finder.source.title":"Choose route start","viewer.route.finder.source.placeholder":"Search route sources","viewer.route.finder.source.empty":"No matching route sources","viewer.route.finder.source.results":"Nodes that can start a route","viewer.route.finder.source.noun":"route sources","viewer.route.finder.source.badge":"start","viewer.route.finder.target.title":"Destination from {label}","viewer.route.finder.target.placeholder":"Search reachable destinations","viewer.route.finder.target.empty":"No matching reachable destinations","viewer.route.finder.target.results":"Reachable route destinations","viewer.route.finder.target.noun":"reachable destinations","viewer.route.hop.one":"{count} hop","viewer.route.hop.other":"{count} hops","viewer.lens.eyebrow":"Semantic lens","viewer.lens.title":"Compare system roles","viewer.lens.close":"Close semantic lens","viewer.lens.instruction":"Choose up to two semantic kinds. One reveals its real traffic; two compare only direct authored relationships.","viewer.lens.kinds":"Semantic kinds","viewer.lens.choose":"Choose a kind to inspect its nodes and touching relationships.","viewer.lens.copy":"Copy link to semantic lens","viewer.lens.clear":"Clear semantic lens","viewer.lens.open":"Open semantic lens","viewer.lens.openActive":"Open active semantic lens","viewer.lens.legend":"Semantic legend","viewer.lens.legend.inspect.one":"Inspect {label}, {count} node","viewer.lens.legend.inspect.other":"Inspect {label}, {count} nodes","viewer.lens.kind.count.one":"{label}, {count} node","viewer.lens.kind.count.other":"{label}, {count} nodes","viewer.lens.compare.one":"{first} → {second}: {forward} · {second} → {first}: {reverse} · {count} direct relationship","viewer.lens.compare.other":"{first} → {second}: {forward} · {second} → {first}: {reverse} · {count} direct relationships","viewer.lens.single":"{nodes} · {relationships} · connected peers remain visible","viewer.lens.node.one":"{count} {label} node","viewer.lens.node.other":"{count} {label} nodes","viewer.lens.relationship.one":"{count} touching relationship","viewer.lens.relationship.other":"{count} touching relationships","viewer.radar.title":"Semantic radar","viewer.radar.building":"Building overview","viewer.radar.openFull":"Open full semantic radar","viewer.radar.open":"Open radar","viewer.radar.close":"Close semantic radar","viewer.radar.surface":"Diagram overview. Click a node to focus it, or use arrow keys to pan.","viewer.radar.click":"Click node","viewer.radar.drag":"Drag to pan","viewer.radar.space":"Semantic radar needs more MAP space.","viewer.radar.nodes":"Semantic diagram radar nodes","viewer.radar.focus":"Focus {label} from Semantic Radar","viewer.radar.status":"{count} nodes · {viewport}","viewer.radar.fullMap":"{count} nodes · full map","viewer.radar.compacted":"Radar compacted to avoid covering the Semantic Passport or MAP controls.","viewer.radar.cancelWaiting":"Cancel semantic radar waiting for more MAP space","viewer.radar.needsSpace":"Semantic radar needs more visible MAP space","viewer.radar.viewport.full":"full map","viewer.radar.viewport.width":"{percent}% width","viewer.radar.viewport.scale":"{percent}% viewport","viewer.nav.controls":"Diagram view controls","viewer.nav.route":"Trace a directed route","viewer.nav.route.title":"Trace route (R)","viewer.nav.route.short":"PATH","viewer.nav.radar":"Open semantic radar","viewer.nav.radar.title":"Semantic radar (M)","viewer.nav.radar.short":"MAP","viewer.nav.lens":"Open semantic lens","viewer.nav.lens.title":"Semantic lens (L)","viewer.nav.lens.short":"LENS","viewer.nav.find":"Find a node","viewer.nav.find.title":"Find a node (/)","viewer.nav.guide":"Open diagram guide","viewer.nav.guide.title":"Diagram guide (?)","viewer.nav.zoomOut":"Zoom out","viewer.nav.zoomOut.title":"Zoom out (-)","viewer.nav.reset":"Reset diagram view","viewer.nav.reset.title":"Reset view (0)","viewer.nav.read":"READ","viewer.nav.zoomIn":"Zoom in","viewer.nav.zoomIn.title":"Zoom in (+)","viewer.nav.camera":"{hint}. Reset diagram view","viewer.nav.camera.title":"{semantic}{hint} · reset view (0)","viewer.nav.camera.semantic":"Semantic camera active · ","viewer.nav.level.map":"MAP","viewer.nav.level.read":"READ","viewer.nav.level.full":"FULL","viewer.nav.level.auto":"AUTO","viewer.nav.detail.map":"Zoom in to reveal relationship labels and node context","viewer.nav.detail.read":"Zoom in again to reveal tags and annotations","viewer.nav.detail.full":"Full diagram detail","viewer.intent.summary":"{label}. {out} outgoing, {in} incoming{loops}. {total} connections. Press Enter for details.","viewer.intent.loops":", {count} self loop","viewer.common.copied":"Copied","viewer.common.copyFailed":"Copy failed","viewer.common.copyLink":"Copy link","viewer.common.clear":"Clear","viewer.common.close":"Close"}}</script>
     <div class="guided-views no-print" id="guided-views" hidden aria-label="Guided diagram views">
       <button id="guided-view-prev" type="button" aria-label="Previous guided view" title="Previous guided view ([)">&#8592;</button>
@@ -5004,8 +5004,8 @@
     <!-- Main Diagram -->
     <div class="diagram-container" data-detail-level="read"
          data-preset-badge-editorial-plate="ARCHIFY / PLATE 04">
-      <svg viewBox="0 0 1270 568" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="classic" data-quality-profile="showcase">
-        <title id="archify-diagram-title">AgentShield — Runtime Security Pipeline for AI Agents</title>
+      <svg viewBox="0 0 1380 658" role="img" lang="en" aria-labelledby="archify-diagram-title archify-diagram-description" data-preset="classic" data-quality-profile="standard">
+        <title id="archify-diagram-title">AgentShield: runtime security pipeline for AI agents</title>
         <desc id="archify-diagram-description">An architecture diagram generated by Archify.</desc>
         <!-- Definitions -->
         <defs>
@@ -5030,244 +5030,323 @@
         <rect width="100%" height="100%" fill="url(#grid)" />
 
         <!-- Boundaries (behind everything) -->
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="region" data-composition-frame-id="0" data-composition-frame-label="Kubernetes cluster (Docker Desktop) — also runs via Docker Compose" x="10" y="100" width="1220" height="400" rx="12" class="c-region" stroke-width="1"/>
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="region" data-composition-frame-id="0" data-composition-frame-label="Kubernetes cluster (Docker Desktop)" x="10" y="30" width="1130" height="560" rx="12" class="c-region" stroke-width="1"/>
 
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="region" data-composition-frame-id="1" data-composition-frame-label="RabbitMQ 4 broker" x="260" y="180" width="460" height="320" rx="12" class="c-region" stroke-width="1"/>
-
-        <rect data-graph-role="structural-frame" data-composition-frame-kind="security-group" data-composition-frame-id="2" data-composition-frame-label="Secret: gemini (GEMINI_API_KEY)" x="760" y="390" width="210" height="110" rx="8" class="c-security-group" stroke-width="1"/>
+        <rect data-graph-role="structural-frame" data-composition-frame-kind="security-group" data-composition-frame-id="1" data-composition-frame-label="Secret: gemini (optional)" x="700" y="330" width="210" height="110" rx="8" class="c-security-group" stroke-width="1"/>
 
         <!-- Connection paths (before components for correct z-order) -->
-        <path data-edge-from="sensor-acme" data-edge-to="events-q" data-edge-label="publish (AMQP)" data-edge-key="0" data-edge-id="acme-publish" data-composition-points="190,160;240,160;240,233;290,233" d="M 190 160 L 232 160 Q 240 160 240 168 L 240 225 Q 240 233 248 233 L 290 233" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <path data-edge-from="sensor-globex" data-edge-to="events-q" data-edge-key="1" data-edge-id="globex-publish" data-composition-points="190,320;240,320;240,247;290,247" d="M 190 320 L 232 320 Q 240 320 240 312 L 240 255 Q 240 247 248 247 L 290 247" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <path data-edge-from="events-q" data-edge-to="detector" data-edge-label="consume · ack" data-edge-key="2" data-edge-id="consume-events" data-composition-points="440,240;540,240" d="M 440 240 L 540 240" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <path data-edge-from="events-q" data-edge-to="dlq" data-edge-label="dead-letter" data-edge-key="3" data-edge-id="dead-letter" data-composition-points="365,270;365,420" d="M 365 270 L 365 420" class="a-dashed" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
-        <path data-edge-from="detector" data-edge-to="postgres" data-edge-label="insert finding" data-edge-key="4" data-edge-id="store-finding" data-composition-points="690,240;790,240" d="M 690 240 L 790 240" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
-        <path data-edge-from="detector" data-edge-to="triage-q" data-edge-label="triage request" data-edge-key="5" data-edge-id="request-triage" data-composition-points="615,270;615,420" d="M 615 270 L 615 420" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="triage-q" data-edge-to="triage" data-edge-label="prefetch 1" data-edge-key="6" data-edge-id="consume-triage" data-composition-points="690,450;790,450" d="M 690 450 L 790 450" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="triage" data-edge-to="gemini" data-edge-label="classify (HTTPS)" data-edge-key="7" data-edge-id="classify" data-composition-points="940,450;1040,450" d="M 940 450 L 1040 450" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="triage" data-edge-to="postgres" data-edge-label="verdict UPDATE" data-edge-key="8" data-edge-id="write-verdict" data-composition-points="865,420;865,396;886,396;886,294;870,294;870,270" d="M 865 420 L 865 404 Q 865 396 873 396 L 878 396 Q 886 396 886 388 L 886 302 Q 886 294 878 294 L 878 294 Q 870 294 870 286 L 870 270" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="api" data-edge-to="postgres" data-edge-label="SELECT" data-edge-key="9" data-edge-id="read-findings" data-composition-points="1040,240;950,240" d="M 1040 240 L 950 240" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-        <path data-edge-from="operator" data-edge-to="api" data-edge-label="GET /findings" data-edge-key="10" data-edge-id="rest-query" data-composition-points="1120,90;1120,210" d="M 1120 90 L 1120 210" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path data-edge-from="sensor" data-edge-to="events-q" data-edge-label="publish" data-edge-key="0" data-edge-id="publish-events" data-composition-points="190,240;270,240" d="M 190 240 L 270 240" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path data-edge-from="events-q" data-edge-to="detector" data-edge-label="consume" data-edge-key="1" data-edge-id="consume-events" data-composition-points="420,240;500,240" d="M 420 240 L 500 240" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path data-edge-from="events-q" data-edge-to="dlq" data-edge-label="dead-letter" data-edge-key="2" data-edge-id="dead-letter" data-composition-points="345,270;345,360" d="M 345 270 L 345 360" class="a-dashed" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
+        <path data-edge-from="detector" data-edge-to="postgres" data-edge-label="findings" data-edge-key="3" data-edge-id="store-finding" data-composition-points="650,240;730,240" d="M 650 240 L 730 240" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path data-edge-from="detector" data-edge-to="redis" data-edge-label="write, then read" data-edge-key="4" data-edge-id="shared-state" data-composition-points="568,210;568,120" d="M 568 210 L 568 120" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="keda" data-edge-to="detector" data-edge-label="scales 1 to 5" data-edge-key="5" data-edge-id="scale-detector" data-composition-points="805,120;805,165;582,165;582,210" d="M 805 120 L 805 157 Q 805 165 797 165 L 590 165 Q 582 165 582 173 L 582 210" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="keda" data-edge-to="mgmt" data-edge-label="reads" data-edge-key="6" data-edge-id="read-broker" data-composition-points="880,90;960,90" d="M 880 90 L 960 90" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="api" data-edge-to="mgmt" data-edge-label="GET /stats" data-edge-key="7" data-edge-id="read-stats" data-composition-points="1035,210;1035,120" d="M 1035 210 L 1035 120" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="api" data-edge-to="postgres" data-edge-label="SELECT" data-edge-key="8" data-edge-id="read-findings" data-composition-points="960,240;880,240" d="M 960 240 L 880 240" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="console" data-edge-to="api" data-edge-label="/api proxy" data-edge-key="9" data-edge-id="call-api" data-composition-points="1035,360;1035,270" d="M 1035 360 L 1035 270" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path data-edge-from="browser" data-edge-to="console" data-edge-label="HTTP :3000" data-edge-key="10" data-edge-id="open-console" data-composition-points="1190,390;1110,390" d="M 1190 390 L 1110 390" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path data-edge-from="detector" data-edge-to="triage-q" data-edge-label="triage request" data-edge-key="11" data-edge-id="request-triage" data-composition-points="575,270;575,360" d="M 575 270 L 575 360" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="triage-q" data-edge-to="triage" data-edge-label="prefetch 1" data-edge-key="12" data-edge-id="consume-triage" data-composition-points="650,390;730,390" d="M 650 390 L 730 390" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="triage" data-edge-to="postgres" data-edge-label="verdict, source" data-edge-key="13" data-edge-id="write-outcome" data-composition-points="805,360;805,270" d="M 805 360 L 805 270" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="triage" data-edge-to="mock" data-edge-label="default" data-edge-key="14" data-edge-id="judge-mock" data-composition-points="805,420;805,510" d="M 805 420 L 805 510" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <path data-edge-from="triage" data-edge-to="gemini" data-edge-label="HTTPS, when switched on" data-edge-key="15" data-edge-id="judge-gemini" data-composition-points="880,390;904,390;904,540;1190,540" d="M 880 390 L 896 390 Q 904 390 904 398 L 904 532 Q 904 540 912 540 L 1190 540" class="a-dashed" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
 
         <!-- Components -->
-        <g id="node-sensor-acme" data-node-id="sensor-acme" data-node-label="Sensor — acme" tabindex="0" role="button" aria-label="Focus Sensor — acme, agent-1 · mock MCP proxy, Kubernetes cluster (Docker Desktop) — also runs via Docker Compose" aria-pressed="false" data-node-kind="external" data-node-sublabel="agent-1 · mock MCP proxy" data-node-context="Kubernetes cluster (Docker Desktop) — also runs via Docker Compose">
-          <title>Sensor — acme · agent-1 · mock MCP proxy · Kubernetes cluster (Docker Desktop) — also runs via Docker Compose</title>
-          <rect x="40" y="130" width="150" height="60" rx="6" class="c-mask"/>
-          <rect x="40" y="130" width="150" height="60" rx="6" class="c-external" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(46 136) scale(0.6875)">
-            <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
-            <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
-          </g>
-          <text data-node-label="" data-detail-anchor="" x="115" y="158" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Sensor — acme</text>
-        <text data-detail="context" x="115" y="174" class="t-muted" font-size="9" text-anchor="middle">agent-1 · mock MCP proxy</text>
-        </g>
-
-        <g id="node-sensor-globex" data-node-id="sensor-globex" data-node-label="Sensor — globex" tabindex="0" role="button" aria-label="Focus Sensor — globex, agent-7 · mock MCP proxy, Kubernetes cluster (Docker Desktop) — also runs via Docker Compose" aria-pressed="false" data-node-kind="external" data-node-sublabel="agent-7 · mock MCP proxy" data-node-context="Kubernetes cluster (Docker Desktop) — also runs via Docker Compose">
-          <title>Sensor — globex · agent-7 · mock MCP proxy · Kubernetes cluster (Docker Desktop) — also runs via Docker Compose</title>
-          <rect x="40" y="290" width="150" height="60" rx="6" class="c-mask"/>
-          <rect x="40" y="290" width="150" height="60" rx="6" class="c-external" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(46 296) scale(0.6875)">
-            <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
-            <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
-          </g>
-          <text data-node-label="" data-detail-anchor="" x="115" y="318" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Sensor — globex</text>
-        <text data-detail="context" x="115" y="334" class="t-muted" font-size="9" text-anchor="middle">agent-7 · mock MCP proxy</text>
-        </g>
-
-        <g id="node-events-q" data-node-id="events-q" data-node-label="events queue" tabindex="0" role="button" aria-label="Focus events queue, durable · DLX, Kubernetes cluster (Docker Desktop) — also runs via Docker Compose › RabbitMQ 4 broker" aria-pressed="false" data-node-kind="messagebus" data-node-sublabel="durable · DLX" data-node-context="Kubernetes cluster (Docker Desktop) — also runs via Docker Compose › RabbitMQ 4 broker">
-          <title>events queue · durable · DLX · Kubernetes cluster (Docker Desktop) — also runs via Docker Compose › RabbitMQ 4 broker</title>
-          <rect x="290" y="210" width="150" height="60" rx="6" class="c-mask"/>
-          <rect x="290" y="210" width="150" height="60" rx="6" class="c-messagebus" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="messagebus" class="semantic-sigil s-messagebus" transform="translate(296 216) scale(0.6875)">
-            <path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/>
-            <circle cx="5" cy="4.5" r="1" class="sigil-fill"/>
-            <circle cx="10.5" cy="8" r="1" class="sigil-fill"/>
-            <circle cx="7" cy="11.5" r="1" class="sigil-fill"/>
-          </g>
-          <text data-node-label="" data-detail-anchor="" x="365" y="238" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">events queue</text>
-        <text data-detail="context" x="365" y="254" class="t-muted" font-size="9" text-anchor="middle">durable · DLX</text>
-        </g>
-
-        <g id="node-dlq" data-node-id="dlq" data-node-label="events.dlq" tabindex="0" role="button" aria-label="Focus events.dlq, poison messages, Kubernetes cluster (Docker Desktop) — also runs via Docker Compose › RabbitMQ 4 broker" aria-pressed="false" data-node-kind="messagebus" data-node-sublabel="poison messages" data-node-context="Kubernetes cluster (Docker Desktop) — also runs via Docker Compose › RabbitMQ 4 broker">
-          <title>events.dlq · poison messages · Kubernetes cluster (Docker Desktop) — also runs via Docker Compose › RabbitMQ 4 broker</title>
-          <rect x="290" y="420" width="150" height="60" rx="6" class="c-mask"/>
-          <rect x="290" y="420" width="150" height="60" rx="6" class="c-messagebus" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="messagebus" class="semantic-sigil s-messagebus" transform="translate(296 426) scale(0.6875)">
-            <path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/>
-            <circle cx="5" cy="4.5" r="1" class="sigil-fill"/>
-            <circle cx="10.5" cy="8" r="1" class="sigil-fill"/>
-            <circle cx="7" cy="11.5" r="1" class="sigil-fill"/>
-          </g>
-          <text data-node-label="" data-detail-anchor="" x="365" y="448" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">events.dlq</text>
-        <text data-detail="context" x="365" y="464" class="t-muted" font-size="9" text-anchor="middle">poison messages</text>
-        </g>
-
-        <g id="node-detector" data-node-id="detector" data-node-label="Detector" tabindex="0" role="button" aria-label="Focus Detector, Go · 4-rule engine, Kubernetes cluster (Docker Desktop) — also runs via Docker Compose" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Go · 4-rule engine" data-node-tag="stateful exfil rule" data-node-context="Kubernetes cluster (Docker Desktop) — also runs via Docker Compose">
-          <title>Detector · Go · 4-rule engine · Kubernetes cluster (Docker Desktop) — also runs via Docker Compose · stateful exfil rule</title>
-          <rect x="540" y="210" width="150" height="60" rx="6" class="c-mask"/>
-          <rect x="540" y="210" width="150" height="60" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(546 216) scale(0.6875)">
+        <g id="node-sensor" data-node-id="sensor" data-node-label="Sensor fleet" tabindex="0" role="button" aria-label="Focus Sensor fleet, simulated agents, Kubernetes cluster (Docker Desktop)" aria-pressed="false" data-node-kind="backend" data-node-sublabel="simulated agents" data-node-tag="irregular load" data-node-context="Kubernetes cluster (Docker Desktop)">
+          <title>Sensor fleet · simulated agents · Kubernetes cluster (Docker Desktop) · irregular load</title>
+          <rect x="40" y="210" width="150" height="60" rx="6" class="c-mask"/>
+          <rect x="40" y="210" width="150" height="60" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(46 216) scale(0.6875)">
             <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="615" y="238" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Detector</text>
-        <text data-detail="context" x="615" y="254" class="t-muted" font-size="9" text-anchor="middle">Go · 4-rule engine</text>
-        <text data-detail="fine" x="615" y="262" class="t-backend" font-size="7" text-anchor="middle">stateful exfil rule</text>
+          <text data-node-label="" data-detail-anchor="" x="115" y="238" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Sensor fleet</text>
+        <text data-detail="context" x="115" y="254" class="t-muted" font-size="9" text-anchor="middle">simulated agents</text>
+        <text data-detail="fine" x="115" y="262" class="t-backend" font-size="7" text-anchor="middle">irregular load</text>
         </g>
 
-        <g id="node-triage-q" data-node-id="triage-q" data-node-label="triage queue" tabindex="0" role="button" aria-label="Focus triage queue, rule hits only, Kubernetes cluster (Docker Desktop) — also runs via Docker Compose › RabbitMQ 4 broker" aria-pressed="false" data-node-kind="messagebus" data-node-sublabel="rule hits only" data-node-context="Kubernetes cluster (Docker Desktop) — also runs via Docker Compose › RabbitMQ 4 broker">
-          <title>triage queue · rule hits only · Kubernetes cluster (Docker Desktop) — also runs via Docker Compose › RabbitMQ 4 broker</title>
-          <rect x="540" y="420" width="150" height="60" rx="6" class="c-mask"/>
-          <rect x="540" y="420" width="150" height="60" rx="6" class="c-messagebus" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="messagebus" class="semantic-sigil s-messagebus" transform="translate(546 426) scale(0.6875)">
+        <g id="node-events-q" data-node-id="events-q" data-node-label="events queue" tabindex="0" role="button" aria-label="Focus events queue, RabbitMQ · durable, Kubernetes cluster (Docker Desktop)" aria-pressed="false" data-node-kind="messagebus" data-node-sublabel="RabbitMQ · durable" data-node-context="Kubernetes cluster (Docker Desktop)">
+          <title>events queue · RabbitMQ · durable · Kubernetes cluster (Docker Desktop)</title>
+          <rect x="270" y="210" width="150" height="60" rx="6" class="c-mask"/>
+          <rect x="270" y="210" width="150" height="60" rx="6" class="c-messagebus" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="messagebus" class="semantic-sigil s-messagebus" transform="translate(276 216) scale(0.6875)">
             <path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/>
             <circle cx="5" cy="4.5" r="1" class="sigil-fill"/>
             <circle cx="10.5" cy="8" r="1" class="sigil-fill"/>
             <circle cx="7" cy="11.5" r="1" class="sigil-fill"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="615" y="448" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">triage queue</text>
-        <text data-detail="context" x="615" y="464" class="t-muted" font-size="9" text-anchor="middle">rule hits only</text>
+          <text data-node-label="" data-detail-anchor="" x="345" y="238" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">events queue</text>
+        <text data-detail="context" x="345" y="254" class="t-muted" font-size="9" text-anchor="middle">RabbitMQ · durable</text>
         </g>
 
-        <g id="node-postgres" data-node-id="postgres" data-node-label="PostgreSQL 17" tabindex="0" role="button" aria-label="Focus PostgreSQL 17, findings · verdicts, Kubernetes cluster (Docker Desktop) — also runs via Docker Compose" aria-pressed="false" data-node-kind="database" data-node-sublabel="findings · verdicts" data-node-tag="UNIQUE(event_id, rule)" data-node-context="Kubernetes cluster (Docker Desktop) — also runs via Docker Compose">
-          <title>PostgreSQL 17 · findings · verdicts · Kubernetes cluster (Docker Desktop) — also runs via Docker Compose · UNIQUE(event_id, rule)</title>
-          <rect x="790" y="210" width="160" height="60" rx="6" class="c-mask"/>
-          <rect x="790" y="210" width="160" height="60" rx="6" class="c-database" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(796 216) scale(0.6875)">
+        <g id="node-dlq" data-node-id="dlq" data-node-label="events.dlq" tabindex="0" role="button" aria-label="Focus events.dlq, dead-letter queue, Kubernetes cluster (Docker Desktop)" aria-pressed="false" data-node-kind="messagebus" data-node-sublabel="dead-letter queue" data-node-context="Kubernetes cluster (Docker Desktop)">
+          <title>events.dlq · dead-letter queue · Kubernetes cluster (Docker Desktop)</title>
+          <rect x="270" y="360" width="150" height="60" rx="6" class="c-mask"/>
+          <rect x="270" y="360" width="150" height="60" rx="6" class="c-messagebus" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="messagebus" class="semantic-sigil s-messagebus" transform="translate(276 366) scale(0.6875)">
+            <path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/>
+            <circle cx="5" cy="4.5" r="1" class="sigil-fill"/>
+            <circle cx="10.5" cy="8" r="1" class="sigil-fill"/>
+            <circle cx="7" cy="11.5" r="1" class="sigil-fill"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="345" y="388" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">events.dlq</text>
+        <text data-detail="context" x="345" y="404" class="t-muted" font-size="9" text-anchor="middle">dead-letter queue</text>
+        </g>
+
+        <g id="node-detector" data-node-id="detector" data-node-label="Detector" tabindex="0" role="button" aria-label="Focus Detector, 1 to 5 replicas · 4 rules, Kubernetes cluster (Docker Desktop)" aria-pressed="false" data-node-kind="backend" data-node-sublabel="1 to 5 replicas · 4 rules" data-node-tag="1 to 5 replicas" data-node-context="Kubernetes cluster (Docker Desktop)">
+          <title>Detector · 1 to 5 replicas · 4 rules · Kubernetes cluster (Docker Desktop) · 1 to 5 replicas</title>
+          <rect x="500" y="210" width="150" height="60" rx="6" class="c-mask"/>
+          <rect x="500" y="210" width="150" height="60" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(506 216) scale(0.6875)">
+            <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="575" y="238" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Detector</text>
+        <text data-detail="context" x="575" y="254" class="t-muted" font-size="9" text-anchor="middle">1 to 5 replicas · 4 rules</text>
+        <text data-detail="fine" x="575" y="262" class="t-backend" font-size="7" text-anchor="middle">1 to 5 replicas</text>
+        </g>
+
+        <g id="node-redis" data-node-id="redis" data-node-label="Redis 8" tabindex="0" role="button" aria-label="Focus Redis 8, shared rule state, Kubernetes cluster (Docker Desktop)" aria-pressed="false" data-node-kind="database" data-node-sublabel="shared rule state" data-node-tag="expiring records" data-node-context="Kubernetes cluster (Docker Desktop)">
+          <title>Redis 8 · shared rule state · Kubernetes cluster (Docker Desktop) · expiring records</title>
+          <rect x="500" y="60" width="150" height="60" rx="6" class="c-mask"/>
+          <rect x="500" y="60" width="150" height="60" rx="6" class="c-database" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(506 66) scale(0.6875)">
             <ellipse cx="8" cy="4" rx="5" ry="2"/>
             <path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="870" y="238" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">PostgreSQL 17</text>
-        <text data-detail="context" x="870" y="254" class="t-muted" font-size="9" text-anchor="middle">findings · verdicts</text>
-        <text data-detail="fine" x="870" y="262" class="t-database" font-size="7" text-anchor="middle">UNIQUE(event_id, rule)</text>
+          <text data-node-label="" data-detail-anchor="" x="575" y="88" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Redis 8</text>
+        <text data-detail="context" x="575" y="104" class="t-muted" font-size="9" text-anchor="middle">shared rule state</text>
+        <text data-detail="fine" x="575" y="112" class="t-database" font-size="7" text-anchor="middle">expiring records</text>
         </g>
 
-        <g id="node-triage" data-node-id="triage" data-node-label="Triage" tabindex="0" role="button" aria-label="Focus Triage, Go · Gemini client, Kubernetes cluster (Docker Desktop) — also runs via Docker Compose › Secret: gemini (GEMINI_API_KEY)" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Go · Gemini client" data-node-context="Kubernetes cluster (Docker Desktop) — also runs via Docker Compose › Secret: gemini (GEMINI_API_KEY)">
-          <title>Triage · Go · Gemini client · Kubernetes cluster (Docker Desktop) — also runs via Docker Compose › Secret: gemini (GEMINI_API_KEY)</title>
-          <rect x="790" y="420" width="150" height="60" rx="6" class="c-mask"/>
-          <rect x="790" y="420" width="150" height="60" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(796 426) scale(0.6875)">
-            <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
-          </g>
-          <text data-node-label="" data-detail-anchor="" x="865" y="448" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Triage</text>
-        <text data-detail="context" x="865" y="464" class="t-muted" font-size="9" text-anchor="middle">Go · Gemini client</text>
-        </g>
-
-        <g id="node-api" data-node-id="api" data-node-label="API" tabindex="0" role="button" aria-label="Focus API, :8080 · 2 replicas, Kubernetes cluster (Docker Desktop) — also runs via Docker Compose" aria-pressed="false" data-node-kind="backend" data-node-sublabel=":8080 · 2 replicas" data-node-context="Kubernetes cluster (Docker Desktop) — also runs via Docker Compose">
-          <title>API · :8080 · 2 replicas · Kubernetes cluster (Docker Desktop) — also runs via Docker Compose</title>
-          <rect x="1040" y="210" width="160" height="60" rx="6" class="c-mask"/>
-          <rect x="1040" y="210" width="160" height="60" rx="6" class="c-backend" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(1046 216) scale(0.6875)">
-            <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
-          </g>
-          <text data-node-label="" data-detail-anchor="" x="1120" y="238" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">API</text>
-        <text data-detail="context" x="1120" y="254" class="t-muted" font-size="9" text-anchor="middle">:8080 · 2 replicas</text>
-        </g>
-
-        <g id="node-gemini" data-node-id="gemini" data-node-label="Gemini API" tabindex="0" role="button" aria-label="Focus Gemini API, flash-lite · free tier, Architecture component" aria-pressed="false" data-node-kind="cloud" data-node-sublabel="flash-lite · free tier" data-node-tag="429 backoff" data-node-context="Architecture component">
-          <title>Gemini API · flash-lite · free tier · Architecture component · 429 backoff</title>
-          <rect x="1040" y="420" width="160" height="60" rx="6" class="c-mask"/>
-          <rect x="1040" y="420" width="160" height="60" rx="6" class="c-cloud" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(1046 426) scale(0.6875)">
+        <g id="node-keda" data-node-id="keda" data-node-label="KEDA" tabindex="0" role="button" aria-label="Focus KEDA, ScaledObject, Kubernetes cluster (Docker Desktop)" aria-pressed="false" data-node-kind="cloud" data-node-sublabel="ScaledObject" data-node-tag="rate and backlog" data-node-context="Kubernetes cluster (Docker Desktop)">
+          <title>KEDA · ScaledObject · Kubernetes cluster (Docker Desktop) · rate and backlog</title>
+          <rect x="730" y="60" width="150" height="60" rx="6" class="c-mask"/>
+          <rect x="730" y="60" width="150" height="60" rx="6" class="c-cloud" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(736 66) scale(0.6875)">
             <path d="M4.3 12.5h7.3a2.4 2.4 0 0 0 .2-4.8 4 4 0 0 0-7.5-1.3A3.1 3.1 0 0 0 4.3 12.5Z"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="1120" y="448" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Gemini API</text>
-        <text data-detail="context" x="1120" y="464" class="t-muted" font-size="9" text-anchor="middle">flash-lite · free tier</text>
-        <text data-detail="fine" x="1120" y="472" class="t-cloud" font-size="7" text-anchor="middle">429 backoff</text>
+          <text data-node-label="" data-detail-anchor="" x="805" y="88" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">KEDA</text>
+        <text data-detail="context" x="805" y="104" class="t-muted" font-size="9" text-anchor="middle">ScaledObject</text>
+        <text data-detail="fine" x="805" y="112" class="t-cloud" font-size="7" text-anchor="middle">rate and backlog</text>
         </g>
 
-        <g id="node-operator" data-node-id="operator" data-node-label="Operator" tabindex="0" role="button" aria-label="Focus Operator, curl / dashboard, Architecture component" aria-pressed="false" data-node-kind="external" data-node-sublabel="curl / dashboard" data-node-context="Architecture component">
-          <title>Operator · curl / dashboard · Architecture component</title>
-          <rect x="1040" y="30" width="160" height="60" rx="6" class="c-mask"/>
-          <rect x="1040" y="30" width="160" height="60" rx="6" class="c-external" stroke-width="1.5"/>
-          <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(1046 36) scale(0.6875)">
+        <g id="node-mgmt" data-node-id="mgmt" data-node-label="Management API" tabindex="0" role="button" aria-label="Focus Management API, RabbitMQ :15672, Kubernetes cluster (Docker Desktop)" aria-pressed="false" data-node-kind="messagebus" data-node-sublabel="RabbitMQ :15672" data-node-tag="events queue statistics" data-node-context="Kubernetes cluster (Docker Desktop)">
+          <title>Management API · RabbitMQ :15672 · Kubernetes cluster (Docker Desktop) · events queue statistics</title>
+          <rect x="960" y="60" width="150" height="60" rx="6" class="c-mask"/>
+          <rect x="960" y="60" width="150" height="60" rx="6" class="c-messagebus" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="messagebus" class="semantic-sigil s-messagebus" transform="translate(966 66) scale(0.6875)">
+            <path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/>
+            <circle cx="5" cy="4.5" r="1" class="sigil-fill"/>
+            <circle cx="10.5" cy="8" r="1" class="sigil-fill"/>
+            <circle cx="7" cy="11.5" r="1" class="sigil-fill"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="1035" y="88" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Management API</text>
+        <text data-detail="context" x="1035" y="104" class="t-muted" font-size="9" text-anchor="middle">RabbitMQ :15672</text>
+        <text data-detail="fine" x="1035" y="112" class="t-messagebus" font-size="7" text-anchor="middle">events queue statistics</text>
+        </g>
+
+        <g id="node-postgres" data-node-id="postgres" data-node-label="PostgreSQL 17" tabindex="0" role="button" aria-label="Focus PostgreSQL 17, findings · verdicts, Kubernetes cluster (Docker Desktop)" aria-pressed="false" data-node-kind="database" data-node-sublabel="findings · verdicts" data-node-tag="UNIQUE(event_id, rule)" data-node-context="Kubernetes cluster (Docker Desktop)">
+          <title>PostgreSQL 17 · findings · verdicts · Kubernetes cluster (Docker Desktop) · UNIQUE(event_id, rule)</title>
+          <rect x="730" y="210" width="150" height="60" rx="6" class="c-mask"/>
+          <rect x="730" y="210" width="150" height="60" rx="6" class="c-database" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="database" class="semantic-sigil s-database" transform="translate(736 216) scale(0.6875)">
+            <ellipse cx="8" cy="4" rx="5" ry="2"/>
+            <path d="M3 4v8c0 1.1 2.2 2 5 2s5-.9 5-2V4M3 8c0 1.1 2.2 2 5 2s5-.9 5-2"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="805" y="238" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">PostgreSQL 17</text>
+        <text data-detail="context" x="805" y="254" class="t-muted" font-size="9" text-anchor="middle">findings · verdicts</text>
+        <text data-detail="fine" x="805" y="262" class="t-database" font-size="7" text-anchor="middle">UNIQUE(event_id, rule)</text>
+        </g>
+
+        <g id="node-api" data-node-id="api" data-node-label="API" tabindex="0" role="button" aria-label="Focus API, :8080 · read-only, Kubernetes cluster (Docker Desktop)" aria-pressed="false" data-node-kind="backend" data-node-sublabel=":8080 · read-only" data-node-context="Kubernetes cluster (Docker Desktop)">
+          <title>API · :8080 · read-only · Kubernetes cluster (Docker Desktop)</title>
+          <rect x="960" y="210" width="150" height="60" rx="6" class="c-mask"/>
+          <rect x="960" y="210" width="150" height="60" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(966 216) scale(0.6875)">
+            <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="1035" y="238" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">API</text>
+        <text data-detail="context" x="1035" y="254" class="t-muted" font-size="9" text-anchor="middle">:8080 · read-only</text>
+        </g>
+
+        <g id="node-console" data-node-id="console" data-node-label="Console" tabindex="0" role="button" aria-label="Focus Console, nginx :3000 · React, Kubernetes cluster (Docker Desktop)" aria-pressed="false" data-node-kind="frontend" data-node-sublabel="nginx :3000 · React" data-node-context="Kubernetes cluster (Docker Desktop)">
+          <title>Console · nginx :3000 · React · Kubernetes cluster (Docker Desktop)</title>
+          <rect x="960" y="360" width="150" height="60" rx="6" class="c-mask"/>
+          <rect x="960" y="360" width="150" height="60" rx="6" class="c-frontend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="frontend" class="semantic-sigil s-frontend" transform="translate(966 366) scale(0.6875)">
+            <rect x="2" y="3" width="12" height="10" rx="2"/>
+            <path d="M2 6.5h12"/>
+            <circle cx="4.1" cy="4.8" r=".7" class="sigil-fill"/>
+            <circle cx="6.3" cy="4.8" r=".7" class="sigil-fill"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="1035" y="388" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Console</text>
+        <text data-detail="context" x="1035" y="404" class="t-muted" font-size="9" text-anchor="middle">nginx :3000 · React</text>
+        </g>
+
+        <g id="node-browser" data-node-id="browser" data-node-label="Operator" tabindex="0" role="button" aria-label="Focus Operator, browser, Architecture component" aria-pressed="false" data-node-kind="external" data-node-sublabel="browser" data-node-context="Architecture component">
+          <title>Operator · browser · Architecture component</title>
+          <rect x="1190" y="360" width="150" height="60" rx="6" class="c-mask"/>
+          <rect x="1190" y="360" width="150" height="60" rx="6" class="c-external" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="external" class="semantic-sigil s-external" transform="translate(1196 366) scale(0.6875)">
             <rect x="2.5" y="5" width="8.5" height="8" rx="1.5"/>
             <path d="M8 2.5h5.5V8M13.5 2.5 7.5 8.5"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="1120" y="58" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Operator</text>
-        <text data-detail="context" x="1120" y="74" class="t-muted" font-size="9" text-anchor="middle">curl / dashboard</text>
+          <text data-node-label="" data-detail-anchor="" x="1265" y="388" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Operator</text>
+        <text data-detail="context" x="1265" y="404" class="t-muted" font-size="9" text-anchor="middle">browser</text>
+        </g>
+
+        <g id="node-triage-q" data-node-id="triage-q" data-node-label="triage queue" tabindex="0" role="button" aria-label="Focus triage queue, rule hits only, Kubernetes cluster (Docker Desktop)" aria-pressed="false" data-node-kind="messagebus" data-node-sublabel="rule hits only" data-node-context="Kubernetes cluster (Docker Desktop)">
+          <title>triage queue · rule hits only · Kubernetes cluster (Docker Desktop)</title>
+          <rect x="500" y="360" width="150" height="60" rx="6" class="c-mask"/>
+          <rect x="500" y="360" width="150" height="60" rx="6" class="c-messagebus" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="messagebus" class="semantic-sigil s-messagebus" transform="translate(506 366) scale(0.6875)">
+            <path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11"/>
+            <circle cx="5" cy="4.5" r="1" class="sigil-fill"/>
+            <circle cx="10.5" cy="8" r="1" class="sigil-fill"/>
+            <circle cx="7" cy="11.5" r="1" class="sigil-fill"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="575" y="388" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">triage queue</text>
+        <text data-detail="context" x="575" y="404" class="t-muted" font-size="9" text-anchor="middle">rule hits only</text>
+        </g>
+
+        <g id="node-triage" data-node-id="triage" data-node-label="Triage" tabindex="0" role="button" aria-label="Focus Triage, Go · two providers, Kubernetes cluster (Docker Desktop) › Secret: gemini (optional)" aria-pressed="false" data-node-kind="backend" data-node-sublabel="Go · two providers" data-node-context="Kubernetes cluster (Docker Desktop) › Secret: gemini (optional)">
+          <title>Triage · Go · two providers · Kubernetes cluster (Docker Desktop) › Secret: gemini (optional)</title>
+          <rect x="730" y="360" width="150" height="60" rx="6" class="c-mask"/>
+          <rect x="730" y="360" width="150" height="60" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(736 366) scale(0.6875)">
+            <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="805" y="388" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Triage</text>
+        <text data-detail="context" x="805" y="404" class="t-muted" font-size="9" text-anchor="middle">Go · two providers</text>
+        </g>
+
+        <g id="node-mock" data-node-id="mock" data-node-label="Mock provider" tabindex="0" role="button" aria-label="Focus Mock provider, no verdict, no quota, Kubernetes cluster (Docker Desktop)" aria-pressed="false" data-node-kind="backend" data-node-sublabel="no verdict, no quota" data-node-tag="deployed default" data-node-context="Kubernetes cluster (Docker Desktop)">
+          <title>Mock provider · no verdict, no quota · Kubernetes cluster (Docker Desktop) · deployed default</title>
+          <rect x="730" y="510" width="150" height="60" rx="6" class="c-mask"/>
+          <rect x="730" y="510" width="150" height="60" rx="6" class="c-backend" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(736 516) scale(0.6875)">
+            <path d="M6 3 3 8l3 5M10 3l3 5-3 5"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="805" y="538" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Mock provider</text>
+        <text data-detail="context" x="805" y="554" class="t-muted" font-size="9" text-anchor="middle">no verdict, no quota</text>
+        <text data-detail="fine" x="805" y="562" class="t-backend" font-size="7" text-anchor="middle">deployed default</text>
+        </g>
+
+        <g id="node-gemini" data-node-id="gemini" data-node-label="Gemini API" tabindex="0" role="button" aria-label="Focus Gemini API, gemini-3.5-flash-lite, Architecture component" aria-pressed="false" data-node-kind="cloud" data-node-sublabel="gemini-3.5-flash-lite" data-node-tag="switched on explicitly" data-node-context="Architecture component">
+          <title>Gemini API · gemini-3.5-flash-lite · Architecture component · switched on explicitly</title>
+          <rect x="1190" y="510" width="150" height="60" rx="6" class="c-mask"/>
+          <rect x="1190" y="510" width="150" height="60" rx="6" class="c-cloud" stroke-width="1.5"/>
+          <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(1196 516) scale(0.6875)">
+            <path d="M4.3 12.5h7.3a2.4 2.4 0 0 0 .2-4.8 4 4 0 0 0-7.5-1.3A3.1 3.1 0 0 0 4.3 12.5Z"/>
+          </g>
+          <text data-node-label="" data-detail-anchor="" x="1265" y="538" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Gemini API</text>
+        <text data-detail="context" x="1265" y="554" class="t-muted" font-size="9" text-anchor="middle">gemini-3.5-flash-lite</text>
+        <text data-detail="fine" x="1265" y="562" class="t-cloud" font-size="7" text-anchor="middle">switched on explicitly</text>
         </g>
 
         <!-- Connection labels -->
-        <g data-detail="context" data-edge-from="sensor-acme" data-edge-to="events-q" data-edge-label="publish (AMQP)" data-edge-key="0" data-edge-id="acme-publish">
-          <rect x="201.4" y="146.5" width="77.2" height="14" rx="3" class="c-mask"/>
-          <text x="240" y="156.5" class="t-backend" font-size="8" text-anchor="middle">publish (AMQP)</text>
+        <g data-detail="context" data-edge-from="sensor" data-edge-to="events-q" data-edge-label="publish" data-edge-key="0" data-edge-id="publish-events">
+          <rect x="208.2" y="220" width="43.6" height="14" rx="3" class="c-mask"/>
+          <text x="230" y="230" class="t-backend" font-size="8" text-anchor="middle">publish</text>
         </g>
-
-        <g data-detail="context" data-edge-from="events-q" data-edge-to="detector" data-edge-label="consume · ack" data-edge-key="2" data-edge-id="consume-events">
-          <rect x="453.8" y="220" width="72.4" height="14" rx="3" class="c-mask"/>
-          <text x="490" y="230" class="t-backend" font-size="8" text-anchor="middle">consume · ack</text>
+        <g data-detail="context" data-edge-from="events-q" data-edge-to="detector" data-edge-label="consume" data-edge-key="1" data-edge-id="consume-events">
+          <rect x="438.2" y="220" width="43.6" height="14" rx="3" class="c-mask"/>
+          <text x="460" y="230" class="t-backend" font-size="8" text-anchor="middle">consume</text>
         </g>
-        <g data-detail="context" data-edge-from="events-q" data-edge-to="dlq" data-edge-label="dead-letter" data-edge-key="3" data-edge-id="dead-letter">
-          <rect x="333.6" y="274" width="62.8" height="14" rx="3" class="c-mask"/>
-          <text x="365" y="284" class="t-messagebus" font-size="8" text-anchor="middle">dead-letter</text>
+        <g data-detail="context" data-edge-from="events-q" data-edge-to="dlq" data-edge-label="dead-letter" data-edge-key="2" data-edge-id="dead-letter">
+          <rect x="313.6" y="274" width="62.8" height="14" rx="3" class="c-mask"/>
+          <text x="345" y="284" class="t-messagebus" font-size="8" text-anchor="middle">dead-letter</text>
         </g>
-        <g data-detail="context" data-edge-from="detector" data-edge-to="postgres" data-edge-label="insert finding" data-edge-key="4" data-edge-id="store-finding">
-          <rect x="701.4" y="220" width="77.2" height="14" rx="3" class="c-mask"/>
-          <text x="740" y="230" class="t-backend" font-size="8" text-anchor="middle">insert finding</text>
+        <g data-detail="context" data-edge-from="detector" data-edge-to="postgres" data-edge-label="findings" data-edge-key="3" data-edge-id="store-finding">
+          <rect x="665.8" y="220" width="48.4" height="14" rx="3" class="c-mask"/>
+          <text x="690" y="230" class="t-backend" font-size="8" text-anchor="middle">findings</text>
         </g>
-        <g data-detail="context" data-edge-from="detector" data-edge-to="triage-q" data-edge-label="triage request" data-edge-key="5" data-edge-id="request-triage">
-          <rect x="576.4" y="274" width="77.2" height="14" rx="3" class="c-mask"/>
-          <text x="615" y="284" class="t-muted" font-size="8" text-anchor="middle">triage request</text>
+        <g data-detail="context" data-edge-from="detector" data-edge-to="redis" data-edge-label="write, then read" data-edge-key="4" data-edge-id="shared-state">
+          <rect x="524.6" y="135" width="86.8" height="14" rx="3" class="c-mask"/>
+          <text x="568" y="145" class="t-muted" font-size="8" text-anchor="middle">write, then read</text>
         </g>
-        <g data-detail="context" data-edge-from="triage-q" data-edge-to="triage" data-edge-label="prefetch 1" data-edge-key="6" data-edge-id="consume-triage">
-          <rect x="711" y="430" width="58" height="14" rx="3" class="c-mask"/>
-          <text x="740" y="440" class="t-muted" font-size="8" text-anchor="middle">prefetch 1</text>
+        <g data-detail="context" data-edge-from="keda" data-edge-to="detector" data-edge-label="scales 1 to 5" data-edge-key="5" data-edge-id="scale-detector">
+          <rect x="657.3" y="145" width="72.4" height="14" rx="3" class="c-mask"/>
+          <text x="693.5" y="155" class="t-muted" font-size="8" text-anchor="middle">scales 1 to 5</text>
         </g>
-        <g data-detail="context" data-edge-from="triage" data-edge-to="gemini" data-edge-label="classify (HTTPS)" data-edge-key="7" data-edge-id="classify">
-          <rect x="946.6" y="430" width="86.8" height="14" rx="3" class="c-mask"/>
-          <text x="990" y="440" class="t-muted" font-size="8" text-anchor="middle">classify (HTTPS)</text>
+        <g data-detail="context" data-edge-from="keda" data-edge-to="mgmt" data-edge-label="reads" data-edge-key="6" data-edge-id="read-broker">
+          <rect x="903" y="70" width="34" height="14" rx="3" class="c-mask"/>
+          <text x="920" y="80" class="t-muted" font-size="8" text-anchor="middle">reads</text>
         </g>
-        <g data-detail="context" data-edge-from="triage" data-edge-to="postgres" data-edge-label="verdict UPDATE" data-edge-key="8" data-edge-id="write-verdict">
-          <rect x="836.9" y="326" width="77.2" height="14" rx="3" class="c-mask"/>
-          <text x="875.5" y="336" class="t-muted" font-size="8" text-anchor="middle">verdict UPDATE</text>
+        <g data-detail="context" data-edge-from="api" data-edge-to="mgmt" data-edge-label="GET /stats" data-edge-key="7" data-edge-id="read-stats">
+          <rect x="1006" y="190" width="58" height="14" rx="3" class="c-mask"/>
+          <text x="1035" y="200" class="t-muted" font-size="8" text-anchor="middle">GET /stats</text>
         </g>
-        <g data-detail="context" data-edge-from="api" data-edge-to="postgres" data-edge-label="SELECT" data-edge-key="9" data-edge-id="read-findings">
-          <rect x="975.6" y="220" width="38.8" height="14" rx="3" class="c-mask"/>
-          <text x="995" y="230" class="t-muted" font-size="8" text-anchor="middle">SELECT</text>
+        <g data-detail="context" data-edge-from="api" data-edge-to="postgres" data-edge-label="SELECT" data-edge-key="8" data-edge-id="read-findings">
+          <rect x="900.6" y="220" width="38.8" height="14" rx="3" class="c-mask"/>
+          <text x="920" y="230" class="t-muted" font-size="8" text-anchor="middle">SELECT</text>
         </g>
-        <g data-detail="context" data-edge-from="operator" data-edge-to="api" data-edge-label="GET /findings" data-edge-key="10" data-edge-id="rest-query">
-          <rect x="1083.8" y="94" width="72.4" height="14" rx="3" class="c-mask"/>
-          <text x="1120" y="104" class="t-backend" font-size="8" text-anchor="middle">GET /findings</text>
+        <g data-detail="context" data-edge-from="console" data-edge-to="api" data-edge-label="/api proxy" data-edge-key="9" data-edge-id="call-api">
+          <rect x="1006" y="340" width="58" height="14" rx="3" class="c-mask"/>
+          <text x="1035" y="350" class="t-backend" font-size="8" text-anchor="middle">/api proxy</text>
+        </g>
+        <g data-detail="context" data-edge-from="browser" data-edge-to="console" data-edge-label="HTTP :3000" data-edge-key="10" data-edge-id="open-console">
+          <rect x="1121" y="370" width="58" height="14" rx="3" class="c-mask"/>
+          <text x="1150" y="380" class="t-backend" font-size="8" text-anchor="middle">HTTP :3000</text>
+        </g>
+        <g data-detail="context" data-edge-from="detector" data-edge-to="triage-q" data-edge-label="triage request" data-edge-key="11" data-edge-id="request-triage">
+          <rect x="536.4" y="274" width="77.2" height="14" rx="3" class="c-mask"/>
+          <text x="575" y="284" class="t-muted" font-size="8" text-anchor="middle">triage request</text>
+        </g>
+        <g data-detail="context" data-edge-from="triage-q" data-edge-to="triage" data-edge-label="prefetch 1" data-edge-key="12" data-edge-id="consume-triage">
+          <rect x="661" y="370" width="58" height="14" rx="3" class="c-mask"/>
+          <text x="690" y="380" class="t-muted" font-size="8" text-anchor="middle">prefetch 1</text>
+        </g>
+        <g data-detail="context" data-edge-from="triage" data-edge-to="postgres" data-edge-label="verdict, source" data-edge-key="13" data-edge-id="write-outcome">
+          <rect x="764" y="324" width="82" height="14" rx="3" class="c-mask"/>
+          <text x="805" y="334" class="t-muted" font-size="8" text-anchor="middle">verdict, source</text>
+        </g>
+        <g data-detail="context" data-edge-from="triage" data-edge-to="mock" data-edge-label="default" data-edge-key="14" data-edge-id="judge-mock">
+          <rect x="783.2" y="424" width="43.6" height="14" rx="3" class="c-mask"/>
+          <text x="805" y="434" class="t-muted" font-size="8" text-anchor="middle">default</text>
+        </g>
+        <g data-detail="context" data-edge-from="triage" data-edge-to="gemini" data-edge-label="HTTPS, when switched on" data-edge-key="15" data-edge-id="judge-gemini">
+          <rect x="843.8" y="445" width="120.39999999999999" height="14" rx="3" class="c-mask"/>
+          <text x="904" y="455" class="t-messagebus" font-size="8" text-anchor="middle">HTTPS, when switched on</text>
         </g>
 
         <!-- Boundary labels (foreground masks keep routes out of titles) -->
-        <g data-graph-role="structural-frame-label" data-composition-frame-id="0" data-composition-frame-kind="region" data-composition-frame-label="Kubernetes cluster (Docker Desktop) — also runs via Docker Compose">
-          <rect data-graph-role="structural-frame-label-mask" x="14" y="110" width="366.4" height="16" rx="3" class="c-mask"/>
-          <text data-boundary-label="" x="18" y="123" class="t-cloud" font-size="9" font-weight="600">Kubernetes cluster (Docker Desktop) — also runs via Docker Compose</text>
+        <g data-graph-role="structural-frame-label" data-composition-frame-id="0" data-composition-frame-kind="region" data-composition-frame-label="Kubernetes cluster (Docker Desktop)">
+          <rect data-graph-role="structural-frame-label-mask" x="14" y="40" width="199" height="16" rx="3" class="c-mask"/>
+          <text data-boundary-label="" x="18" y="53" class="t-cloud" font-size="9" font-weight="600">Kubernetes cluster (Docker Desktop)</text>
         </g>
 
-        <g data-graph-role="structural-frame-label" data-composition-frame-id="1" data-composition-frame-kind="region" data-composition-frame-label="RabbitMQ 4 broker">
-          <rect data-graph-role="structural-frame-label-mask" x="264" y="190" width="101.8" height="16" rx="3" class="c-mask"/>
-          <text data-boundary-label="" x="268" y="203" class="t-cloud" font-size="9" font-weight="600">RabbitMQ 4 broker</text>
-        </g>
-
-        <g data-graph-role="structural-frame-label" data-composition-frame-id="2" data-composition-frame-kind="security-group" data-composition-frame-label="Secret: gemini (GEMINI_API_KEY)">
-          <rect data-graph-role="structural-frame-label-mask" x="764" y="400" width="177.4" height="16" rx="3" class="c-mask"/>
-          <text data-boundary-label="" x="768" y="413" class="t-security" font-size="9" font-weight="600">Secret: gemini (GEMINI_API_KEY)</text>
+        <g data-graph-role="structural-frame-label" data-composition-frame-id="1" data-composition-frame-kind="security-group" data-composition-frame-label="Secret: gemini (optional)">
+          <rect data-graph-role="structural-frame-label-mask" x="704" y="340" width="145" height="16" rx="3" class="c-mask"/>
+          <text data-boundary-label="" x="708" y="353" class="t-security" font-size="9" font-weight="600">Secret: gemini (optional)</text>
         </g>
 
         <!-- Legend -->
         <g data-legend="" data-legend-bridge="">
-          <text x="40" y="532" class="t-primary" font-size="12" font-weight="650">Legend</text>
-          <g data-legend-semantic-kind="backend" data-legend-kind="backend" data-legend-label="Backend" data-legend-x="40" data-legend-baseline="552" data-legend-width="78">
-            <rect x="40" y="543" width="16" height="10" rx="2.5" class="c-backend" stroke-width="1"/>
-            <text x="62" y="552" class="t-muted" font-size="10" font-weight="500">Backend</text>
+          <text x="40" y="622" class="t-primary" font-size="12" font-weight="650">Legend</text>
+          <g data-legend-semantic-kind="frontend" data-legend-kind="frontend" data-legend-label="Frontend" data-legend-x="40" data-legend-baseline="642" data-legend-width="83">
+            <rect x="40" y="633" width="16" height="10" rx="2.5" class="c-frontend" stroke-width="1"/>
+            <text x="62" y="642" class="t-muted" font-size="10" font-weight="500">Frontend</text>
           </g>
-          <g data-legend-semantic-kind="database" data-legend-kind="database" data-legend-label="Database" data-legend-x="140" data-legend-baseline="552" data-legend-width="83">
-            <rect x="140" y="543" width="16" height="10" rx="2.5" class="c-database" stroke-width="1"/>
-            <text x="162" y="552" class="t-muted" font-size="10" font-weight="500">Database</text>
+          <g data-legend-semantic-kind="backend" data-legend-kind="backend" data-legend-label="Backend" data-legend-x="145" data-legend-baseline="642" data-legend-width="78">
+            <rect x="145" y="633" width="16" height="10" rx="2.5" class="c-backend" stroke-width="1"/>
+            <text x="167" y="642" class="t-muted" font-size="10" font-weight="500">Backend</text>
           </g>
-          <g data-legend-semantic-kind="cloud" data-legend-kind="cloud" data-legend-label="Cloud" data-legend-x="245" data-legend-baseline="552" data-legend-width="68">
-            <rect x="245" y="543" width="16" height="10" rx="2.5" class="c-cloud" stroke-width="1"/>
-            <text x="267" y="552" class="t-muted" font-size="10" font-weight="500">Cloud</text>
+          <g data-legend-semantic-kind="database" data-legend-kind="database" data-legend-label="Database" data-legend-x="245" data-legend-baseline="642" data-legend-width="83">
+            <rect x="245" y="633" width="16" height="10" rx="2.5" class="c-database" stroke-width="1"/>
+            <text x="267" y="642" class="t-muted" font-size="10" font-weight="500">Database</text>
           </g>
-          <g data-legend-semantic-kind="messagebus" data-legend-kind="messagebus" data-legend-label="Message bus" data-legend-x="335" data-legend-baseline="552" data-legend-width="98">
-            <rect x="335" y="543" width="16" height="10" rx="2.5" class="c-messagebus" stroke-width="1"/>
-            <text x="357" y="552" class="t-muted" font-size="10" font-weight="500">Message bus</text>
+          <g data-legend-semantic-kind="cloud" data-legend-kind="cloud" data-legend-label="Cloud" data-legend-x="350" data-legend-baseline="642" data-legend-width="68">
+            <rect x="350" y="633" width="16" height="10" rx="2.5" class="c-cloud" stroke-width="1"/>
+            <text x="372" y="642" class="t-muted" font-size="10" font-weight="500">Cloud</text>
           </g>
-          <g data-legend-semantic-kind="external" data-legend-kind="external" data-legend-label="External" data-legend-x="455" data-legend-baseline="552" data-legend-width="83">
-            <rect x="455" y="543" width="16" height="10" rx="2.5" class="c-external" stroke-width="1"/>
-            <text x="477" y="552" class="t-muted" font-size="10" font-weight="500">External</text>
+          <g data-legend-semantic-kind="messagebus" data-legend-kind="messagebus" data-legend-label="Message bus" data-legend-x="440" data-legend-baseline="642" data-legend-width="98">
+            <rect x="440" y="633" width="16" height="10" rx="2.5" class="c-messagebus" stroke-width="1"/>
+            <text x="462" y="642" class="t-muted" font-size="10" font-weight="500">Message bus</text>
+          </g>
+          <g data-legend-semantic-kind="external" data-legend-kind="external" data-legend-label="External" data-legend-x="560" data-legend-baseline="642" data-legend-width="83">
+            <rect x="560" y="633" width="16" height="10" rx="2.5" class="c-external" stroke-width="1"/>
+            <text x="582" y="642" class="t-muted" font-size="10" font-weight="500">External</text>
           </g>
         </g>
       </svg>
@@ -5459,36 +5538,36 @@
       <div class="card">
         <div class="card-header">
           <div class="card-dot cyan"></div>
-          <h3>Ingest &amp; tenancy</h3>
+          <h3>Load and scaling</h3>
         </div>
         <ul>
-          <li>&bull; Sensors mock the on-host monitor; production: an MCP proxy in the agent&#39;s tool path</li>
-          <li>&bull; Two tenants share one pipeline — customer_id travels on every event, finding, and query</li>
-          <li>&bull; Events are transient; only findings persist</li>
+          <li>&bull; One sensor simulates a fleet of agents working in bursts</li>
+          <li>&bull; KEDA keeps the detector between 1 and 5 replicas</li>
+          <li>&bull; Signals: publish rate and backlog of the events queue</li>
         </ul>
       </div>
 
       <div class="card">
         <div class="card-header">
           <div class="card-dot emerald"></div>
-          <h3>Detection &amp; delivery</h3>
+          <h3>Detection and delivery</h3>
         </div>
         <ul>
-          <li>&bull; 4 rules: secret_file_read, pipe_to_shell, unknown_domain, stateful exfiltration</li>
-          <li>&bull; At-least-once: manual ack after the DB write; UNIQUE(event_id, rule) absorbs redeliveries</li>
-          <li>&bull; Malformed messages dead-lettered; infra errors requeued</li>
+          <li>&bull; 4 rules; exfiltration is stateful, its state shared in Redis</li>
+          <li>&bull; Any replica handles the read or the request, in either order</li>
+          <li>&bull; At-least-once: ack after the write, repeats absorbed</li>
         </ul>
       </div>
 
       <div class="card">
         <div class="card-header">
           <div class="card-dot violet"></div>
-          <h3>Triage &amp; serving</h3>
+          <h3>Triage and console</h3>
         </div>
         <ul>
-          <li>&bull; Rules see 100% of events; the LLM sees only rule hits; verdict UPDATEd onto the finding</li>
-          <li>&bull; 429/failure: one delayed requeue, then give up — best-effort by design</li>
-          <li>&bull; Read-only REST with severity/customer/limit filters; CI runs go vet, test, gofmt</li>
+          <li>&bull; Triage sees only rule hits</li>
+          <li>&bull; Mock provider by default; Gemini switched on explicitly</li>
+          <li>&bull; The console polls the API for statistics and findings</li>
         </ul>
       </div>
     </div>
@@ -7168,7 +7247,6 @@
         copyShareCard: runCopyShareCard
       };
 
-      // Auto-open on page load for demo/screenshot purposes: ?openExport=1
       // Wait for fonts (so the menu doesn't flash before typography lands)
       // and paint before opening. Fallback timeout for browsers without the
       // Font Loading API.

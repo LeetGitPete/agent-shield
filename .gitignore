@@ -1,3 +1,5 @@
 .env
 docs/diagrams/*.visual-check.*
 .scratch/
+web/node_modules/
+web/dist/

@@ -30,9 +30,32 @@ jobs:
         env:
           REDIS_ADDR: localhost:6379 # without it the Redis-backed test fails in CI instead of being skipped
       - name: Check formatting
-        run: test -z "$(gofmt -l .)"
+        run: test -z "$(gofmt -l cmd internal)" # the Go source directories only
       - name: Check dev.ps1 is ASCII only
         # Windows PowerShell reads a script without a byte order mark in the
         # system code page, so any other byte could change its meaning.
         # Counts the bytes left after every ASCII byte is removed.
         run: test -f dev.ps1 && test "$(LC_ALL=C tr -d '\000-\177' < dev.ps1 | wc -c)" -eq 0
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24 # the version the console image is built with
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install
+        run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      - name: Test
+        run: npm test
+      - name: Build
+        run: npm run build

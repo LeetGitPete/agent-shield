@@ -18,3 +18,7 @@ require (
 	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/text v0.29.0 // indirect
 )
+
+// Some of the console's npm dependencies ship Go files, which ./... would
+// otherwise pick up once they are installed.
+ignore ./web/node_modules

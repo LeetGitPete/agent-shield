@@ -113,3 +113,34 @@ spec:
             - { name: SENSOR_AGENTS_PER_CUSTOMER, value: "10" }
             - { name: SENSOR_EVENTS_PER_SEC, value: "10" } # the average of the whole fleet
             - { name: SENSOR_SUSPICIOUS_PROB, value: "0.005" } # about 3 findings a minute at this rate
+---
+# The web console: nginx serves the built page and proxies the api path
+# prefix to the api Service, so the browser only ever talks to this port.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: console
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: console } }
+  template:
+    metadata: { labels: { app: console } }
+    spec:
+      containers:
+        - name: console
+          image: agent-shield-console:local
+          imagePullPolicy: Always
+          ports: [{ containerPort: 3000 }]
+          readinessProbe:
+            httpGet: { path: /, port: 3000 }
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: console
+spec:
+  type: LoadBalancer # Docker Desktop exposes this on localhost:3000
+  selector: { app: console }
+  ports:
+    - { port: 3000 }

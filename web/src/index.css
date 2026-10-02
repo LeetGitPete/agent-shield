@@ -1,0 +1,31 @@
+@import 'tailwindcss';
+
+/* A dark terminal: one typeface, and colour only where it carries a state.
+   "static" keeps every variable in the output, because the chart reads the
+   colours as CSS variables and not through utility classes. */
+@theme static {
+  --font-mono: 'Courier New', Courier, monospace;
+
+  --color-surface: #0a0e0b;
+  --color-panel: #101511;
+  --color-line: #233027;
+  --color-ink: #d5ddd6;
+  --color-muted: #8b978e;
+
+  --color-ok: #4ade80; /* healthy, benign */
+  --color-bad: #f87171; /* CRITICAL, HIGH, malicious */
+  --color-warn: #fbbf24; /* MEDIUM, pending */
+  --color-dim: #6b756e; /* mock, no verdict */
+
+  --color-series: #2f9fd0; /* chart lines: none of the state colours */
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+}

@@ -22,8 +22,12 @@
 
 $ErrorActionPreference = 'Stop'
 
-$Images = @('detector', 'triage', 'api', 'sensor')
-$AppDeployments = @('detector', 'triage', 'api', 'sensor')
+# The Go services share the Dockerfile in the repository root. The console
+# has its own Dockerfile and build context in its directory.
+$GoImages = @('detector', 'triage', 'api', 'sensor')
+$ConsoleImage = 'console'
+$WebDir = 'web'
+$AppDeployments = @('detector', 'triage', 'api', 'sensor', 'console')
 $InfraDeployments = @('rabbitmq', 'postgres', 'redis')
 $AllDeployments = $AppDeployments + $InfraDeployments
 # One sensor Deployment per customer, from before the single fleet sensor.
@@ -78,7 +82,8 @@ function Show-Help {
     Write-Host '  deploy           build, install KEDA if missing, apply the manifests, restart the applications and wait for them'
     Write-Host '  down             remove the stack from the cluster; deploy brings it back; down all also removes KEDA'
     Write-Host '  status           show the pods, the autoscaler state, the load and the triage provider'
-    Write-Host '  test             run the Go tests'
+    Write-Host '  test             run the Go tests and the frontend tests'
+    Write-Host '  web              run the console dev server with hot reload on http://localhost:5173, against the API on localhost:8080'
     Write-Host '  load             load low|high|off: set the average load of the simulated fleet, or switch it off'
     Write-Host '  clean            empty the queues, the shared state and the findings'
     Write-Host '  simulate-attack  publish a known attack to verify detection; flags: -agents N -gap 300ms -out-of-order -customer ID'
@@ -131,11 +136,14 @@ function Assert-ComposeDown {
 }
 
 function Invoke-Build {
-    foreach ($image in $Images) {
+    foreach ($image in $GoImages) {
         Write-Host "Building agent-shield-${image}:local"
         docker build --build-arg "SERVICE=$image" -t "agent-shield-${image}:local" .
         Assert-LastExit "Building the $image image"
     }
+    Write-Host "Building agent-shield-${ConsoleImage}:local"
+    docker build -t "agent-shield-${ConsoleImage}:local" $WebDir
+    Assert-LastExit "Building the $ConsoleImage image"
 }
 
 # Waits until every application Deployment has rolled out. Stops as soon as a
@@ -290,7 +298,7 @@ function Invoke-Deploy {
     # Last, after the rollout: no pod started by this deploy has seen a key.
     Sync-GeminiSecret
 
-    Write-Host 'The stack is up. API: http://localhost:8080  broker management: http://localhost:15672'
+    Write-Host 'The stack is up. Console: http://localhost:3000  API: http://localhost:8080  broker: localhost:5672  broker management: http://localhost:15672'
 }
 
 # Removes the scaled object and returns kubectl's lines about it. KEDA holds
@@ -453,9 +461,32 @@ function Show-Status {
     Write-Host "Triage provider: $provider"
 }
 
+# Installs the console's dependencies from the lock file, unless the
+# dependency directory is there already.
+function Install-WebDependencies {
+    if (Test-Path -LiteralPath (Join-Path $WebDir 'node_modules')) {
+        return
+    }
+    Write-Host "Installing the console's dependencies"
+    npm --prefix $WebDir ci
+    Assert-LastExit "Installing the console's dependencies"
+}
+
 function Invoke-Test {
     go test ./...
     Assert-LastExit 'The Go tests'
+    Install-WebDependencies
+    npm --prefix $WebDir test
+    Assert-LastExit 'The frontend tests'
+}
+
+# Runs the console's dev server, which proxies the api path prefix to the API
+# on localhost:8080. It keeps the tool's default port, 5173: the deployed
+# console holds 3000.
+function Invoke-Web {
+    Install-WebDependencies
+    npm --prefix $WebDir run dev
+    Assert-LastExit 'The console dev server'
 }
 
 function Invoke-SimulateAttack([string[]]$Rest) {
@@ -592,7 +623,8 @@ if ($args.Count -gt 1) {
     $rest = @($args[1..($args.Count - 1)])
 }
 
-# The manifests, the build context and the Go module are addressed relative to the script.
+# The manifests, the build contexts, the Go module and the console's
+# directory are addressed relative to the script.
 Push-Location $PSScriptRoot
 try {
     switch ($command) {
@@ -602,6 +634,7 @@ try {
         'down' { Invoke-Down $rest }
         'status' { Assert-NoArguments $command $rest; Show-Status }
         'test' { Assert-NoArguments $command $rest; Invoke-Test }
+        'web' { Assert-NoArguments $command $rest; Invoke-Web }
         'simulate-attack' { Invoke-SimulateAttack $rest }
         'triage' { Set-TriageProvider $rest }
         'load' { Set-Load $rest }
