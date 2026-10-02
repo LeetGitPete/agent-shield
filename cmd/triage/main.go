@@ -1,18 +1,18 @@
 // The triage service is the second-tier reviewer: it consumes triage
-// requests published by the detector, asks Gemini whether the finding is
-// really malicious, and writes the verdict onto the finding in Postgres.
+// requests published by the detector, asks its provider whether the finding
+// is really malicious, and writes the result onto the finding in Postgres.
 // Rules are cheap and run on everything; the LLM is slow and rate-limited,
 // so it only sees events that already matched a rule.
+//
+// The provider is Gemini or mock, chosen by TRIAGE_PROVIDER. The mock
+// provider produces no verdict; it lets the pipeline run without a provider
+// key or quota.
 package main
 
 import (
-	"bytes"
 	"database/sql"
 	"encoding/json"
-	"fmt"
-	"io"
 	"log"
-	"net/http"
 	"os"
 	"time"
 
@@ -21,6 +21,7 @@ import (
 
 	"github.com/leetgitpete/agent-shield/internal/event"
 	"github.com/leetgitpete/agent-shield/internal/mq"
+	"github.com/leetgitpete/agent-shield/internal/schema"
 )
 
 // Mirrors the detector's TriageRequest.
@@ -42,17 +43,22 @@ func envOr(key, fallback string) string {
 func main() {
 	amqpURL := envOr("AMQP_URL", "amqp://guest:guest@localhost:5672/")
 	postgresURL := envOr("POSTGRES_URL", "postgres://postgres:postgres@localhost:5432/agentshield")
-	apiKey := os.Getenv("GEMINI_API_KEY")
-	model := envOr("GEMINI_MODEL", "gemini-flash-lite-latest")
-	if apiKey == "" {
-		log.Fatal("GEMINI_API_KEY is required")
+
+	provider, err := providerFromEnv()
+	if err != nil {
+		log.Fatal("triage provider: ", err)
 	}
+	// Logged before anything is consumed, so the configuration is never a guess.
+	log.Println("triage starting, provider:", provider)
 
 	db, err := sql.Open("pgx", postgresURL)
 	if err != nil {
 		log.Fatal("open postgres: ", err)
 	}
 	defer db.Close()
+	if err := schema.Setup(db); err != nil {
+		log.Fatal("set up schema: ", err)
+	}
 
 	connection, err := amqp.Dial(amqpURL)
 	if err != nil {
@@ -76,7 +82,7 @@ func main() {
 		log.Fatal("consume: ", err)
 	}
 
-	log.Println("triage running, model:", model)
+	log.Println("triage running")
 
 	for delivery := range deliveries {
 		var request TriageRequest
@@ -86,89 +92,37 @@ func main() {
 			continue
 		}
 
-		verdict, err := judge(apiKey, model, request)
-		if err != nil {
-			if delivery.Redelivered { // second failure: give up rather than loop forever
-				log.Printf("finding %d: triage failed twice, giving up: %v", request.FindingID, err)
-				delivery.Ack(false)
+		verdict, err := provider.Judge(request)
+		result := decide(provider.Name(), verdict, err, delivery.Redelivered, time.Now().UTC())
+		if result.Retry {
+			log.Printf("finding %d: triage failed, will retry: %v", request.FindingID, err)
+			time.Sleep(10 * time.Second) // crude rate-limit backoff before retrying
+			delivery.Nack(false, true)
+			continue
+		}
+		if result.GaveUp { // second failure: give up rather than loop forever
+			log.Printf("finding %d: triage failed twice, giving up: %v", request.FindingID, err)
+		}
+
+		// An outcome without a verdict never replaces a verdict: a request can be
+		// redelivered after its verdict was written but before it was acknowledged.
+		if _, err := db.Exec(`
+			UPDATE findings SET llm_verdict = $1, verdict_source = $2, triaged_at = $3
+			WHERE id = $4 AND ($1::text IS NOT NULL OR llm_verdict IS NULL)`,
+			result.Verdict, result.Source, result.TriagedAt, request.FindingID); err != nil {
+			log.Println("update finding: ", err)
+			if result.GaveUp {
+				delivery.Ack(false) // a requeue would call the provider a third time; the finding stays pending instead
 			} else {
-				log.Printf("finding %d: triage failed, will retry: %v", request.FindingID, err)
-				time.Sleep(10 * time.Second) // crude rate-limit backoff before retrying
 				delivery.Nack(false, true)
 			}
 			continue
 		}
-
-		summary := verdict.Verdict + ": " + verdict.Reason
-		if _, err := db.Exec(`UPDATE findings SET llm_verdict = $1 WHERE id = $2`, summary, request.FindingID); err != nil {
-			log.Println("update finding: ", err)
-			delivery.Nack(false, true)
-			continue
+		if result.Verdict != nil {
+			log.Printf("finding %d (%s): %s", request.FindingID, request.Rule, *result.Verdict)
+		} else {
+			log.Printf("finding %d (%s): processed by %s, no verdict", request.FindingID, request.Rule, result.Source)
 		}
-		log.Printf("finding %d (%s): %s", request.FindingID, request.Rule, summary)
 		delivery.Ack(false)
 	}
-}
-
-// Gemini REST API request/response shapes (only the fields we use).
-type geminiRequest struct {
-	Contents []geminiContent `json:"contents"`
-}
-type geminiContent struct {
-	Parts []geminiPart `json:"parts"`
-}
-type geminiPart struct {
-	Text string `json:"text"`
-}
-type geminiResponse struct {
-	Candidates []struct {
-		Content geminiContent `json:"content"`
-	} `json:"candidates"`
-}
-
-// judge asks Gemini for a verdict on one finding.
-func judge(apiKey, model string, request TriageRequest) (Verdict, error) {
-	eventJSON, _ := json.Marshal(request.Event)
-	prompt := fmt.Sprintf(`You review security findings about AI agents' tool calls.
-Rule %q (severity %s) flagged this event: %s
-Event: %s
-
-Is this genuinely malicious or a false positive? Reply with ONLY this JSON, no other text:
-{"verdict": "malicious" or "benign", "reason": "<one short sentence>"}`,
-		request.Rule, request.Severity, request.Detail, eventJSON)
-
-	body, _ := json.Marshal(geminiRequest{
-		Contents: []geminiContent{{Parts: []geminiPart{{Text: prompt}}}},
-	})
-
-	url := "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent"
-	httpRequest, err := http.NewRequest("POST", url, bytes.NewReader(body))
-	if err != nil {
-		return Verdict{}, err
-	}
-	httpRequest.Header.Set("x-goog-api-key", apiKey)
-	httpRequest.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{Timeout: 30 * time.Second}
-	response, err := client.Do(httpRequest)
-	if err != nil {
-		return Verdict{}, err
-	}
-	defer response.Body.Close()
-	responseBody, err := io.ReadAll(response.Body)
-	if err != nil {
-		return Verdict{}, err
-	}
-	if response.StatusCode != http.StatusOK { // includes 429 rate limits; caller retries
-		return Verdict{}, fmt.Errorf("gemini returned %d: %.200s", response.StatusCode, responseBody)
-	}
-
-	var parsed geminiResponse
-	if err := json.Unmarshal(responseBody, &parsed); err != nil {
-		return Verdict{}, err
-	}
-	if len(parsed.Candidates) == 0 || len(parsed.Candidates[0].Content.Parts) == 0 {
-		return Verdict{}, fmt.Errorf("gemini returned no candidates")
-	}
-	return parseVerdict(parsed.Candidates[0].Content.Parts[0].Text)
 }

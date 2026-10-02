@@ -18,22 +18,8 @@ import (
 	"github.com/leetgitpete/agent-shield/internal/event"
 	"github.com/leetgitpete/agent-shield/internal/mq"
 	"github.com/leetgitpete/agent-shield/internal/rules"
+	"github.com/leetgitpete/agent-shield/internal/schema"
 )
-
-// Run on startup; IF NOT EXISTS makes it safe to run every time.
-const findingsSchema = `
-CREATE TABLE IF NOT EXISTS findings (
-	id          BIGSERIAL PRIMARY KEY,       -- auto-incrementing finding id
-	event_id    TEXT NOT NULL,               -- which event triggered it
-	customer_id TEXT NOT NULL,
-	agent_id    TEXT NOT NULL,
-	rule        TEXT NOT NULL,               -- which rule fired
-	severity    TEXT NOT NULL,
-	ts          TIMESTAMPTZ NOT NULL,        -- event timestamp
-	detail      TEXT NOT NULL,
-	llm_verdict TEXT,                        -- filled in later by the triage service
-	UNIQUE (event_id, rule)                  -- idempotency: same event+rule can only exist once
-)`
 
 // TriageRequest is the message published for the LLM triage service.
 type TriageRequest struct {
@@ -60,8 +46,8 @@ func main() {
 		log.Fatal("open postgres: ", err)
 	}
 	defer db.Close()
-	if _, err := db.Exec(findingsSchema); err != nil {
-		log.Fatal("create schema: ", err)
+	if err := schema.Setup(db); err != nil {
+		log.Fatal("set up schema: ", err)
 	}
 
 	connection, err := amqp.Dial(amqpURL)

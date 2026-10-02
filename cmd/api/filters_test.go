@@ -54,3 +54,28 @@ func TestLimitParsedAndCapped(t *testing.T) {
 		t.Fatal("expected error for non-numeric limit")
 	}
 }
+
+func TestEachRuleNameAccepted(t *testing.T) {
+	for _, rule := range []string{"secret_file_read", "pipe_to_shell", "unknown_domain", "exfiltration"} {
+		f, err := parseFilters(url.Values{"rule": {rule}})
+		if err != nil {
+			t.Errorf("rule %q rejected: %v", rule, err)
+			continue
+		}
+		if f.Rule != rule {
+			t.Errorf("rule = %q, want %q", f.Rule, rule)
+		}
+	}
+}
+
+func TestUnknownRuleRejected(t *testing.T) {
+	if _, err := parseFilters(url.Values{"rule": {"bananas"}}); err == nil {
+		t.Fatal("expected error for unknown rule")
+	}
+}
+
+func TestRuleIsCaseSensitive(t *testing.T) {
+	if _, err := parseFilters(url.Values{"rule": {"EXFILTRATION"}}); err == nil {
+		t.Fatal("expected error for a rule name in upper case")
+	}
+}

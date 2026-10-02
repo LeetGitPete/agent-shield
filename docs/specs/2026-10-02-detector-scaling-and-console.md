@@ -171,10 +171,11 @@ New settings are environment variables, following the existing convention:
 - The LLM call sits behind a provider interface with two implementations: Gemini and mock.
 - Provider selection comes from TRIAGE_PROVIDER, with the values gemini and mock. When it is unset, Gemini is used if a key is present and mock otherwise. An empty value counts as unset; any value other than gemini or mock is a startup error. The active provider is logged at startup. Selecting Gemini without a key is a startup error.
 - The mock provider is the default wherever the stack is deployed: the Kubernetes manifest sets TRIAGE_PROVIDER to mock explicitly, and compose sets it to mock unless the environment file sets it to a non-empty value. A deployed stack therefore never calls the LLM provider until it is switched on, with the developer script's triage command on the cluster or with TRIAGE_PROVIDER in the environment file under compose.
-- The mock provider waits MOCK_TRIAGE_DELAY_MS (default 1000) and produces no verdict. It sets verdict_source to mock and triaged_at to the processing time and leaves the verdict empty.
-- Gemini verdicts set verdict_source to gemini and triaged_at in addition to the verdict text. When the service gives up on a finding after its retry, it sets the same two columns and leaves the verdict empty.
+- The mock provider waits MOCK_TRIAGE_DELAY_MS (default 1000) and produces no verdict. It sets verdict_source to mock and triaged_at to the processing time and leaves the verdict empty. A MOCK_TRIAGE_DELAY_MS that is not a whole number of milliseconds, zero or more, is a startup error.
+- Gemini verdicts set verdict_source to gemini and triaged_at in addition to the verdict text. When the service gives up on a finding after its retry, it sets the same two columns and leaves the verdict empty. If that write fails, the request is dropped and the finding stays pending, so a database outage never turns into repeated provider calls.
+- An outcome without a verdict never replaces a verdict already on the finding: a request redelivered after its verdict was written leaves the finding as it is.
 - The four resulting states are: pending (triaged_at is null), verdict present, processed by Gemini without a verdict, processed by the mock provider.
-- The Gemini model is pinned to a fixed model identifier as the code default, in place of the floating alias used today, so compose and Kubernetes run the same model. Delivery step 2 owns this: the identifier is the stable id of the current flash-lite model from the provider's published model list. If it cannot be determined when the step is implemented, the alias stays and the pin remains listed under values fixed during implementation.
+- The Gemini model is pinned to a fixed model identifier as the code default, in place of the floating alias used before, so compose and Kubernetes run the same model. The identifier is gemini-3.5-flash-lite, the stable id of the newest flash-lite model in the provider's published model list on 2026-10-02. GEMINI_MODEL overrides it.
 - In Kubernetes the Gemini key is an optional secret reference, so the service starts when the secret is absent. The example environment file ships with an empty key and with TRIAGE_PROVIDER set to mock, with a comment naming the two values.
 - The Gemini provider takes its base URL as a parameter, defaulting to the provider's public address, so tests can point it at a stand-in server. No test and no delivery step calls the real provider.
 - Retry behaviour, concurrency and prompt are unchanged.
@@ -345,7 +346,6 @@ Known limits to state in the README:
 Values fixed during implementation:
 
 - One replica's real throughput with the evaluation cost setting, which fixes the high load level and the rate target. The expectation is 170 to 190 events per second at 5 ms.
-- The pinned Gemini model identifier, taken from the provider's published model list.
 
 Facts the design relies on:
 

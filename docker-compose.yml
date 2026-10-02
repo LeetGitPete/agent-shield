@@ -34,7 +34,9 @@ services:
 
   api:
     build: { context: ., args: { SERVICE: api } }
-    environment: *backend-env
+    environment:
+      <<: *backend-env
+      RABBITMQ_MGMT_URL: http://guest:guest@rabbitmq:15672 # read by GET /stats
     ports:
       - "8080:8080"
     depends_on:
@@ -44,7 +46,10 @@ services:
     build: { context: ., args: { SERVICE: triage } }
     environment:
       <<: *backend-env
-      GEMINI_API_KEY: ${GEMINI_API_KEY} # from .env, never committed
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-} # from .env, never committed; only the gemini provider needs it
+      # mock unless .env sets a non-empty value, so a key in .env alone never spends provider quota
+      TRIAGE_PROVIDER: ${TRIAGE_PROVIDER:-mock}
+      MOCK_TRIAGE_DELAY_MS: ${MOCK_TRIAGE_DELAY_MS:-} # empty: the service's own default
     depends_on:
       rabbitmq: { condition: service_healthy }
       postgres: { condition: service_healthy }

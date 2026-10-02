@@ -16,6 +16,17 @@ type Finding struct {
 	Detail   string // human-readable explanation for the analyst
 }
 
+// Rule names, as stored on findings and accepted by the API's rule filter.
+const (
+	RuleSecretFileRead = "secret_file_read"
+	RulePipeToShell    = "pipe_to_shell"
+	RuleUnknownDomain  = "unknown_domain"
+	RuleExfiltration   = "exfiltration"
+)
+
+// Names lists every rule the engine can raise.
+var Names = []string{RuleSecretFileRead, RulePipeToShell, RuleUnknownDomain, RuleExfiltration}
+
 // Reading any path containing one of these fragments counts as touching a secret.
 var secretPathFragments = []string{".env", "id_rsa", "id_ed25519", ".aws/credentials", ".ssh/"}
 
@@ -49,7 +60,7 @@ func (engine *Engine) Evaluate(evt event.Event) []Finding {
 	case event.ToolFileRead:
 		if isSecretPath(evt.Args["path"]) { // rule 1: secret file access
 			findings = append(findings, Finding{
-				Rule:     "secret_file_read",
+				Rule:     RuleSecretFileRead,
 				Severity: "HIGH",
 				Detail:   "agent read secret file " + evt.Args["path"],
 			})
@@ -59,7 +70,7 @@ func (engine *Engine) Evaluate(evt event.Event) []Finding {
 	case event.ToolBashExec:
 		if isPipeToShell(evt.Args["command"]) { // rule 2: downloaded code piped into a shell
 			findings = append(findings, Finding{
-				Rule:     "pipe_to_shell",
+				Rule:     RulePipeToShell,
 				Severity: "CRITICAL",
 				Detail:   "agent piped a download into a shell: " + evt.Args["command"],
 			})
@@ -69,14 +80,14 @@ func (engine *Engine) Evaluate(evt event.Event) []Finding {
 		domain := domainOf(evt.Args["url"])
 		if domain != "" && !allowedDomains[domain] { // rule 3: fetch outside the allowlist
 			findings = append(findings, Finding{
-				Rule:     "unknown_domain",
+				Rule:     RuleUnknownDomain,
 				Severity: "MEDIUM",
 				Detail:   "agent fetched non-allowlisted domain " + domain,
 			})
 		}
 		if engine.agentsThatReadSecrets[agentKey] { // rule 4 (stateful): web request after a secret read could carry it out
 			findings = append(findings, Finding{
-				Rule:     "exfiltration",
+				Rule:     RuleExfiltration,
 				Severity: "CRITICAL",
 				Detail:   "agent made a web request after reading a secret file (url: " + evt.Args["url"] + ")",
 			})

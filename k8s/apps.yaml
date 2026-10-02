@@ -1,6 +1,7 @@
 # AgentShield services. Images are built locally (imagePullPolicy: Never —
 # Docker Desktop's cluster shares the local Docker daemon).
-# The Gemini key comes from a Secret created out-of-band:
+# Triage runs the mock provider here. The Gemini key is only needed for the
+# gemini provider; it comes from a Secret created out-of-band:
 #   kubectl create secret generic gemini --from-env-file=.env
 apiVersion: apps/v1
 kind: Deployment
@@ -37,8 +38,9 @@ spec:
           env:
             - { name: AMQP_URL, value: "amqp://guest:guest@rabbitmq:5672/" }
             - { name: POSTGRES_URL, value: "postgres://postgres:postgres@postgres:5432/agentshield" }
+            - { name: TRIAGE_PROVIDER, value: mock } # the LLM provider is only called once this is set to gemini
             - name: GEMINI_API_KEY
-              valueFrom: { secretKeyRef: { name: gemini, key: GEMINI_API_KEY } }
+              valueFrom: { secretKeyRef: { name: gemini, key: GEMINI_API_KEY, optional: true } } # triage starts without the Secret
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -57,6 +59,7 @@ spec:
           env:
             - { name: AMQP_URL, value: "amqp://guest:guest@rabbitmq:5672/" }
             - { name: POSTGRES_URL, value: "postgres://postgres:postgres@postgres:5432/agentshield" }
+            - { name: RABBITMQ_MGMT_URL, value: "http://guest:guest@rabbitmq:15672" }
           ports: [{ containerPort: 8080 }]
           readinessProbe:
             httpGet: { path: /healthz, port: 8080 }

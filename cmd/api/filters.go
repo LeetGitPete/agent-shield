@@ -3,8 +3,11 @@ package main
 import (
 	"fmt"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
+
+	"github.com/leetgitpete/agent-shield/internal/rules"
 )
 
 const (
@@ -18,6 +21,7 @@ var validSeverities = map[string]bool{"MEDIUM": true, "HIGH": true, "CRITICAL": 
 type Filters struct {
 	Severity string // "" = no filter
 	Customer string // "" = no filter
+	Rule     string // "" = no filter
 	Limit    int
 }
 
@@ -30,6 +34,13 @@ func parseFilters(q url.Values) (Filters, error) {
 			return f, fmt.Errorf("invalid severity %q (want MEDIUM|HIGH|CRITICAL)", s)
 		}
 		f.Severity = s
+	}
+
+	if rule := q.Get("rule"); rule != "" {
+		if !slices.Contains(rules.Names, rule) { // matched as written: rule names are identifiers, not labels
+			return f, fmt.Errorf("invalid rule %q (want %s)", rule, strings.Join(rules.Names, "|"))
+		}
+		f.Rule = rule
 	}
 
 	if l := q.Get("limit"); l != "" {
