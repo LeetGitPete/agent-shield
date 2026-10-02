@@ -9,11 +9,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"log"
-	"net/http" // stdlib HTTP server; no framework needed
+	"net/http"
 	"os"
 	"time"
 
-	_ "github.com/jackc/pgx/v5/stdlib" // registers the "pgx" database driver
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 // Finding is the JSON response shape (mirrors the findings table).
@@ -26,7 +26,7 @@ type Finding struct {
 	Severity   string    `json:"severity"`
 	Ts         time.Time `json:"ts"`
 	Detail     string    `json:"detail"`
-	LLMVerdict *string   `json:"llm_verdict"` // pointer: NULL in the DB -> null in JSON
+	LLMVerdict *string   `json:"llm_verdict"` // null until triage has written a verdict
 }
 
 func envOr(key, fallback string) string {
@@ -38,7 +38,7 @@ func envOr(key, fallback string) string {
 
 func main() {
 	pgURL := envOr("POSTGRES_URL", "postgres://postgres:postgres@localhost:5432/agentshield")
-	addr := envOr("ADDR", ":8080") // port to listen on
+	addr := envOr("ADDR", ":8080")
 
 	db, err := sql.Open("pgx", pgURL)
 	if err != nil {
@@ -46,10 +46,11 @@ func main() {
 	}
 	defer db.Close()
 
-	mux := http.NewServeMux() // router: maps "METHOD /path" patterns to handler functions
+	mux := http.NewServeMux()
 
-	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) { // handler runs per matching request
-		if err := db.Ping(); err != nil { // healthy = we can reach the DB
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
+		// Healthy means the database is reachable; nothing else is checked.
+		if err := db.Ping(); err != nil {
 			http.Error(w, "db unreachable", http.StatusServiceUnavailable)
 			return
 		}
@@ -57,28 +58,28 @@ func main() {
 	})
 
 	mux.HandleFunc("GET /findings", func(w http.ResponseWriter, r *http.Request) {
-		filters, err := parseFilters(r.URL.Query()) // validate query params
+		filters, err := parseFilters(r.URL.Query())
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest) // bad input is the caller's fault: 400
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 		findings, err := queryFindings(db, filters)
 		if err != nil {
 			log.Println("query findings: ", err)
-			http.Error(w, "internal error", http.StatusInternalServerError) // log details, hide them from the caller
+			http.Error(w, "internal error", http.StatusInternalServerError) // the cause goes to the log, not to the caller
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(findings) // serialize straight into the response
+		json.NewEncoder(w).Encode(findings)
 	})
 
 	log.Println("api listening on", addr)
-	log.Fatal(http.ListenAndServe(addr, mux)) // blocks forever: accept loop, one goroutine per request
+	log.Fatal(http.ListenAndServe(addr, mux))
 }
 
 func queryFindings(db *sql.DB, filters Filters) ([]Finding, error) {
-	// One static query; "$1 = '' OR ..." disables a filter when it's empty.
-	// $N placeholders keep values out of the SQL string — no injection possible.
+	// One static query: an empty filter value disables its condition, so no
+	// SQL is ever assembled from request input.
 	rows, err := db.Query(`
 		SELECT id, event_id, customer_id, agent_id, rule, severity, ts, detail, llm_verdict
 		FROM findings
@@ -90,16 +91,16 @@ func queryFindings(db *sql.DB, filters Filters) ([]Finding, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close() // release the DB cursor when done
+	defer rows.Close()
 
-	findings := []Finding{} // empty (not nil) so zero rows serializes as [] not null
-	for rows.Next() {       // advance row by row
+	findings := []Finding{} // non-nil, so zero rows encode as [] and not null
+	for rows.Next() {
 		var finding Finding
 		if err := rows.Scan(&finding.ID, &finding.EventID, &finding.CustomerID, &finding.AgentID,
-			&finding.Rule, &finding.Severity, &finding.Ts, &finding.Detail, &finding.LLMVerdict); err != nil { // copy columns into struct fields
+			&finding.Rule, &finding.Severity, &finding.Ts, &finding.Detail, &finding.LLMVerdict); err != nil {
 			return nil, err
 		}
 		findings = append(findings, finding)
 	}
-	return findings, rows.Err() // rows.Err reports any error that ended the loop early
+	return findings, rows.Err()
 }

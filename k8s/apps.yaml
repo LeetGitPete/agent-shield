@@ -16,7 +16,7 @@ spec:
         - name: detector
           image: agent-shield-detector:local
           imagePullPolicy: Never
-          env: # YAML anchors don't cross `---` documents, so env is repeated per service
+          env:
             - { name: AMQP_URL, value: "amqp://guest:guest@rabbitmq:5672/" }
             - { name: POSTGRES_URL, value: "postgres://postgres:postgres@postgres:5432/agentshield" }
 ---

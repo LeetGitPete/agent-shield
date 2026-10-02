@@ -4,7 +4,7 @@ Runtime security monitoring for AI agents — a miniature [CNAPP](https://en.wik
 event pipeline that watches what AI agents *do* (their tool calls) and flags dangerous
 behavior in real time.
 
-Cloud runtime-security products (Upwind, Sysdig, CrowdStrike) monitor workloads at the
+Cloud runtime-security products (CrowdStrike, Sysdig, Upwind) monitor workloads at the
 kernel level with eBPF sensors. AgentShield applies the same architecture one layer up,
 to a newer problem: an AI agent that reads your `.env` and then posts to an unknown
 domain is exfiltrating secrets, and no kernel-level tool has the semantic context to

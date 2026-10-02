@@ -1,8 +1,10 @@
-package event // shared event schema, imported by all services
+// Package event defines the event schema shared by all services.
+package event
 
 import "time"
 
-type Tool string // string-based "enum" of tool kinds
+// Tool is the kind of tool an agent called.
+type Tool string
 
 const (
 	ToolBashExec Tool = "bash_exec" // agent ran a shell command
@@ -10,7 +12,7 @@ const (
 	ToolWebFetch Tool = "web_fetch" // agent made an HTTP request
 )
 
-// Event is one observed agent tool call; `json:"..."` tags set the field names used in JSON.
+// Event is one observed agent tool call.
 type Event struct {
 	ID         string            `json:"id"`          // unique id, also the idempotency key
 	Ts         time.Time         `json:"ts"`          // when the call happened

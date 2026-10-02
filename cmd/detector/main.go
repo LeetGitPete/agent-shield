@@ -7,12 +7,12 @@
 package main
 
 import (
-	"database/sql" // Go's standard SQL interface
+	"database/sql"
 	"encoding/json"
 	"log"
 	"os"
 
-	_ "github.com/jackc/pgx/v5/stdlib" // blank import: only runs its init(), registering the "pgx" driver
+	_ "github.com/jackc/pgx/v5/stdlib"
 	amqp "github.com/rabbitmq/amqp091-go"
 
 	"github.com/leetgitpete/agent-shield/internal/event"
@@ -55,12 +55,12 @@ func main() {
 	amqpURL := envOr("AMQP_URL", "amqp://guest:guest@localhost:5672/")
 	postgresURL := envOr("POSTGRES_URL", "postgres://postgres:postgres@localhost:5432/agentshield")
 
-	db, err := sql.Open("pgx", postgresURL) // connection pool, lazily connected
+	db, err := sql.Open("pgx", postgresURL)
 	if err != nil {
 		log.Fatal("open postgres: ", err)
 	}
 	defer db.Close()
-	if _, err := db.Exec(findingsSchema); err != nil { // create the table if this is the first run
+	if _, err := db.Exec(findingsSchema); err != nil {
 		log.Fatal("create schema: ", err)
 	}
 
@@ -80,11 +80,13 @@ func main() {
 		log.Fatal("declare queues: ", err)
 	}
 
-	if err := channel.Qos(16, 0, false); err != nil { // prefetch=16: at most 16 unacked messages in flight (backpressure)
+	// Prefetch 16: bounds the unacknowledged messages in flight (back-pressure).
+	if err := channel.Qos(16, 0, false); err != nil {
 		log.Fatal("set qos: ", err)
 	}
 
-	deliveries, err := channel.Consume(mq.EventsQueue, "detector", false, false, false, false, nil) // autoAck=false: we ack manually
+	// autoAck is off: each message is acknowledged manually, below.
+	deliveries, err := channel.Consume(mq.EventsQueue, "detector", false, false, false, false, nil)
 	if err != nil {
 		log.Fatal("consume: ", err)
 	}
@@ -92,15 +94,15 @@ func main() {
 	engine := rules.NewEngine()
 	log.Println("detector running")
 
-	for delivery := range deliveries { // blocks until the next message arrives
+	for delivery := range deliveries {
 		var evt event.Event
-		if err := json.Unmarshal(delivery.Body, &evt); err != nil || evt.ID == "" { // parse JSON into evt; &evt = write into it
+		if err := json.Unmarshal(delivery.Body, &evt); err != nil || evt.ID == "" {
 			log.Printf("malformed event -> DLQ: %.100s", delivery.Body)
-			delivery.Nack(false, false) // reject, requeue=false -> dead-lettered to DLQ (retrying can't fix bad JSON)
+			delivery.Nack(false, false) // no requeue: the broker dead-letters it, since a retry cannot fix bad JSON
 			continue
 		}
 
-		findings := engine.Evaluate(evt) // run all rules
+		findings := engine.Evaluate(evt)
 
 		storedAll := true
 		for _, finding := range findings {
@@ -111,14 +113,14 @@ func main() {
 			}
 		}
 		if !storedAll {
-			delivery.Nack(false, true) // infra hiccup (e.g. DB down): requeue=true so the event is retried
+			delivery.Nack(false, true) // infrastructure failure (e.g. database down): requeue so the event is retried
 			continue
 		}
 
 		if len(findings) > 0 {
 			log.Printf("event %s: %d finding(s)", evt.ID, len(findings))
 		}
-		delivery.Ack(false) // done: only now does RabbitMQ forget the message
+		delivery.Ack(false) // only now may the broker drop the message
 	}
 }
 
@@ -129,9 +131,9 @@ func storeAndRequestTriage(db *sql.DB, channel *amqp.Channel, evt event.Event, f
 		INSERT INTO findings (event_id, customer_id, agent_id, rule, severity, ts, detail)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		ON CONFLICT (event_id, rule) DO NOTHING
-		RETURNING id`, // returns the new row's id — or no row at all on conflict
+		RETURNING id`, // on conflict no row comes back
 		evt.ID, evt.CustomerID, evt.AgentID, finding.Rule, finding.Severity, evt.Ts, finding.Detail,
-	).Scan(&findingID) // copy the returned id into findingID
+	).Scan(&findingID)
 
 	if err == sql.ErrNoRows {
 		return nil // duplicate delivery: finding already exists, no second triage request

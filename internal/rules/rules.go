@@ -3,8 +3,8 @@
 package rules
 
 import (
-	"net/url" // URL parsing for the domain rule
-	"strings" // substring checks for path/command rules
+	"net/url"
+	"strings"
 
 	"github.com/leetgitpete/agent-shield/internal/event"
 )
@@ -35,15 +35,15 @@ type Engine struct {
 }
 
 func NewEngine() *Engine {
-	return &Engine{agentsThatReadSecrets: make(map[string]bool)} // maps must be initialized before use
+	return &Engine{agentsThatReadSecrets: make(map[string]bool)}
 }
 
 // Evaluate returns all findings for one event (a single event can match several rules).
 func (engine *Engine) Evaluate(evt event.Event) []Finding {
-	var findings []Finding                         // nil slice; append() allocates on first use
-	agentKey := evt.CustomerID + "/" + evt.AgentID // per-tenant identity of this agent
+	var findings []Finding
+	agentKey := evt.CustomerID + "/" + evt.AgentID
 
-	switch evt.Tool { // each tool kind has its own rules
+	switch evt.Tool {
 
 	case event.ToolFileRead:
 		if isSecretPath(evt.Args["path"]) { // rule 1: secret file access
@@ -85,7 +85,7 @@ func (engine *Engine) Evaluate(evt event.Event) []Finding {
 }
 
 func isSecretPath(path string) bool {
-	for _, fragment := range secretPathFragments { // range = for-each; first value (index) ignored with _
+	for _, fragment := range secretPathFragments {
 		if strings.Contains(path, fragment) {
 			return true
 		}
@@ -93,14 +93,15 @@ func isSecretPath(path string) bool {
 	return false
 }
 
-// isPipeToShell catches the classic "curl http://... | sh" pattern.
+// isPipeToShell reports whether the last pipe in the command feeds a shell,
+// the classic "curl http://... | sh" pattern.
 func isPipeToShell(command string) bool {
-	if !strings.Contains(command, "|") { // no pipe, nothing to check
+	if !strings.Contains(command, "|") {
 		return false
 	}
-	afterLastPipe := command[strings.LastIndex(command, "|")+1:]                           // substring after the last "|"
-	words := strings.Fields(afterLastPipe)                                                 // split on whitespace
-	return len(words) > 0 && (words[0] == "sh" || words[0] == "bash" || words[0] == "zsh") // is a shell the pipe target?
+	afterLastPipe := command[strings.LastIndex(command, "|")+1:]
+	words := strings.Fields(afterLastPipe)
+	return len(words) > 0 && (words[0] == "sh" || words[0] == "bash" || words[0] == "zsh")
 }
 
 // domainOf extracts "example.com" from "https://example.com/path".

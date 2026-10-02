@@ -1,16 +1,17 @@
-// The sensor MOCKS the component that would sit on a customer's machine
+// The sensor mocks the component that would sit on a customer's machine
 // watching an AI agent's tool calls (in production: an MCP proxy in the
 // agent's execution path). It fabricates a realistic event stream and
-// publishes it to RabbitMQ.
+// publishes it to RabbitMQ. One process poses as one agent of one customer,
+// set by CUSTOMER_ID and AGENT_ID.
 package main
 
 import (
-	"crypto/rand"   // cryptographic randomness for event ids
-	"encoding/hex"  // bytes -> hex string
-	"encoding/json" // struct -> JSON
+	"crypto/rand"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"log"
-	mathrand "math/rand/v2" // fast randomness for picking samples; renamed to avoid clashing with crypto/rand
+	mathrand "math/rand/v2"
 	"os"
 	"time"
 
@@ -20,7 +21,7 @@ import (
 	"github.com/leetgitpete/agent-shield/internal/mq"
 )
 
-var tools = []event.Tool{event.ToolBashExec, event.ToolFileRead, event.ToolWebFetch} // pool to pick from
+var tools = []event.Tool{event.ToolBashExec, event.ToolFileRead, event.ToolWebFetch}
 
 // Sample values per tool; a few are deliberately suspicious so the detector has hits to find.
 var (
@@ -29,16 +30,17 @@ var (
 	sampleURLs     = []string{"https://pkg.go.dev", "https://github.com", "http://exfil-node.xyz/upload"}
 )
 
+// newID returns a random 128-bit event id as 32 hex characters.
 func newID() string {
-	randomBytes := make([]byte, 16)        // 16 random bytes ~ a UUID's entropy
-	rand.Read(randomBytes)                 // fill with randomness
-	return hex.EncodeToString(randomBytes) // as 32 hex chars
+	randomBytes := make([]byte, 16)
+	rand.Read(randomBytes)
+	return hex.EncodeToString(randomBytes)
 }
 
 func randomEvent(customerID, agentID string) event.Event {
-	tool := tools[mathrand.IntN(len(tools))] // pick a random tool kind
+	tool := tools[mathrand.IntN(len(tools))]
 	args := map[string]string{}
-	switch tool { // pick a random argument fitting the tool
+	switch tool {
 	case event.ToolBashExec:
 		args["command"] = sampleCommands[mathrand.IntN(len(sampleCommands))]
 	case event.ToolFileRead:
@@ -65,33 +67,34 @@ func envOr(key, fallback string) string {
 }
 
 func main() {
-	customerID := envOr("CUSTOMER_ID", "acme")                         // which tenant this sensor pretends to be
-	agentID := envOr("AGENT_ID", "agent-1")                            // which agent it watches
-	amqpURL := envOr("AMQP_URL", "amqp://guest:guest@localhost:5672/") // where RabbitMQ lives
+	customerID := envOr("CUSTOMER_ID", "acme")
+	agentID := envOr("AGENT_ID", "agent-1")
+	amqpURL := envOr("AMQP_URL", "amqp://guest:guest@localhost:5672/")
 	fmt.Printf("sensor starting: customer=%s agent=%s\n", customerID, agentID)
 
-	connection, err := amqp.Dial(amqpURL) // TCP connection to the broker
+	connection, err := amqp.Dial(amqpURL)
 	if err != nil {
-		log.Fatal("connect to rabbitmq: ", err) // log and exit; sensor is useless without the broker
+		log.Fatal("connect to rabbitmq: ", err)
 	}
-	defer connection.Close() // deferred calls run when main() returns
+	defer connection.Close()
 
-	channel, err := connection.Channel() // lightweight session on the connection; all operations go through it
+	channel, err := connection.Channel()
 	if err != nil {
 		log.Fatal("open channel: ", err)
 	}
 	defer channel.Close()
 
-	if err := mq.Declare(channel); err != nil { // ensure queues exist before publishing
+	if err := mq.Declare(channel); err != nil { // the queues must exist before the first publish
 		log.Fatal("declare queues: ", err)
 	}
 
-	for { // emit one random event every 2 seconds, forever
+	// One random event every 2 seconds.
+	for {
 		evt := randomEvent(customerID, agentID)
-		payload, err := json.Marshal(evt) // struct -> JSON bytes
+		payload, err := json.Marshal(evt)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "marshal failed:", err)
-			continue // skip this event, keep running
+			continue
 		}
 		if err := mq.PublishJSON(channel, mq.EventsQueue, payload); err != nil {
 			log.Fatal("publish: ", err)

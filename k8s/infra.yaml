@@ -1,4 +1,4 @@
-# RabbitMQ + Postgres, single replica each, no persistence (demo cluster).
+# RabbitMQ + Postgres, single replica each, no persistence (local development cluster).
 # Production would use StatefulSets with PersistentVolumeClaims or managed services.
 apiVersion: apps/v1
 kind: Deployment
@@ -22,7 +22,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: rabbitmq # DNS name other pods use: amqp://rabbitmq:5672
+  name: rabbitmq
 spec:
   selector: { app: rabbitmq }
   ports:

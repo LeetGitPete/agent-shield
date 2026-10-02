@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"net/url" // url.Values = parsed query parameters
-	"strconv" // string -> int
+	"net/url"
+	"strconv"
 	"strings"
 )
 
@@ -22,7 +22,7 @@ type Filters struct {
 }
 
 func parseFilters(q url.Values) (Filters, error) {
-	f := Filters{Customer: q.Get("customer"), Limit: defaultLimit} // Get returns "" if the param is absent
+	f := Filters{Customer: q.Get("customer"), Limit: defaultLimit}
 
 	if s := q.Get("severity"); s != "" {
 		s = strings.ToUpper(s) // accept ?severity=high too
@@ -37,7 +37,7 @@ func parseFilters(q url.Values) (Filters, error) {
 		if err != nil || n < 1 {
 			return f, fmt.Errorf("invalid limit %q", l)
 		}
-		f.Limit = min(n, maxLimit) // clamp to the cap
+		f.Limit = min(n, maxLimit)
 	}
 	return f, nil
 }
