@@ -12,6 +12,11 @@ export interface Stats {
   consumers: number;
 }
 
+// What the ready count is, shown with it in the tile and the chart. It is 0
+// whenever the detectors keep up, which next to a busy rate in would
+// otherwise read as a stalled pipeline.
+export const QUEUE_DEPTH_CAPTION = 'events waiting for a detector · 0 = keeping up';
+
 // What an exfiltration finding was correlated from.
 export interface Evidence {
   read_event_id: string;

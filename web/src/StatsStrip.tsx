@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { QUEUE_DEPTH_CAPTION } from './api';
 import type { Stats } from './api';
 
 interface Props {
@@ -11,7 +12,7 @@ export function StatsStrip({ stats, failure }: Props) {
   return (
     <section aria-label="pipeline statistics" className="mt-4">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Tile label="queue depth" value={stats?.ready.toString()} dimmed={dimmed} />
+        <Tile label="queue depth" value={stats?.ready.toString()} dimmed={dimmed} caption={QUEUE_DEPTH_CAPTION} />
         <Tile label="detectors" value={stats?.consumers.toString()} dimmed={dimmed} />
         <Tile label="events/s in" value={stats?.publish_rate.toFixed(1)} dimmed={dimmed} />
         <Tile label="events/s out" value={stats?.ack_rate.toFixed(1)} dimmed={dimmed} />
@@ -36,13 +37,22 @@ export function StatsStrip({ stats, failure }: Props) {
   );
 }
 
-function Tile({ label, value, dimmed }: { label: string; value: string | undefined; dimmed: boolean }) {
+interface TileProps {
+  label: string;
+  value: string | undefined;
+  dimmed: boolean;
+  caption?: string; // what the value counts; the grid stretches the tiles without one to the same height
+}
+
+function Tile({ label, value, dimmed, caption }: TileProps) {
   const labelId = useId();
+  const captionId = useId();
   return (
     // The dimming is an inline style so that it holds whatever the stylesheet does.
     <div
       role="group"
       aria-labelledby={labelId}
+      aria-describedby={caption ? captionId : undefined}
       style={{ opacity: dimmed ? 0.4 : 1 }}
       className="border-t border-muted/50 bg-panel px-4 pt-3 pb-3.5 transition-opacity"
     >
@@ -50,6 +60,11 @@ function Tile({ label, value, dimmed }: { label: string; value: string | undefin
         {label}
       </div>
       <div className="mt-2 text-[40px] leading-[44px] font-medium tracking-[-0.02em] text-ink">{value ?? '-'}</div>
+      {caption && (
+        <div id={captionId} className="mt-1 text-[11px] leading-4 text-muted">
+          {caption}
+        </div>
+      )}
     </div>
   );
 }

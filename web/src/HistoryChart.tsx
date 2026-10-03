@@ -1,5 +1,5 @@
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { POLL_MS } from './api';
+import { POLL_MS, QUEUE_DEPTH_CAPTION } from './api';
 import { formatHourMinute, formatTime } from './format';
 import { WINDOW_MS } from './history';
 import type { Sample } from './history';
@@ -61,7 +61,7 @@ export function HistoryChart({ samples, now }: Props) {
       {/* Two panels, not two scales on one plot: depth runs to thousands and
           the detector count to a handful, and a shared plot would suggest a
           relation between the two scales that is only an accident of drawing. */}
-      <Panel title="queue depth" dataKey="ready" curve="linear" points={points} end={end} />
+      <Panel title="queue depth" hint={QUEUE_DEPTH_CAPTION} dataKey="ready" curve="linear" points={points} end={end} />
       <Panel title="detectors" dataKey="detectors" curve="stepAfter" points={points} end={end} timeAxis />
       <figcaption className="mt-1 text-[11px] leading-4 uppercase tracking-[0.08em] text-muted">
         samples held: {samples.length} (last {WINDOW_MS / MINUTE_MS} minutes)
@@ -72,6 +72,7 @@ export function HistoryChart({ samples, now }: Props) {
 
 interface PanelProps {
   title: string;
+  hint?: string; // what the series counts, after the title
   dataKey: 'ready' | 'detectors';
   curve: 'linear' | 'stepAfter';
   points: Point[];
@@ -79,10 +80,19 @@ interface PanelProps {
   timeAxis?: boolean; // only the lower panel labels the time axis the two share
 }
 
-function Panel({ title, dataKey, curve, points, end, timeAxis = false }: PanelProps) {
+function Panel({ title, hint, dataKey, curve, points, end, timeAxis = false }: PanelProps) {
   return (
     <div className="not-first:mt-2.5 not-first:border-t not-first:border-line not-first:pt-2.5">
-      <div className="text-[11px] leading-4 font-medium uppercase tracking-[0.1em] text-muted">{title}</div>
+      <div className="text-[11px] leading-4 font-medium uppercase tracking-[0.1em] text-muted">
+        {title}
+        {/* As one block, the hint moves under the title as a whole when the line is too narrow for both. */}
+        {hint && (
+          <>
+            {' '}
+            <span className="inline-block font-normal normal-case tracking-normal">{hint}</span>
+          </>
+        )}
+      </div>
       <ResponsiveContainer width="100%" height={timeAxis ? 132 : 110}>
         <AreaChart data={points} syncId="pipeline" margin={{ top: 6, right: 20, bottom: 0, left: 0 }}>
           {/* The grid leaves out its line at the foot of the plot: the axis

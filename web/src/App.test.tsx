@@ -499,6 +499,35 @@ it('stays dimmed, with no values to keep, while statistics have never been avail
   expect(screen.getByText('statistics live')).toBeInTheDocument();
 });
 
+const queueDepthCaption = 'events waiting for a detector · 0 = keeping up';
+
+it('explains the queue depth under its value, as the tile description, from before the first statistics', async () => {
+  stubApi();
+
+  render(<App />);
+
+  expect(within(tile('queue depth')).getByText('-')).toBeInTheDocument();
+  expect(within(tile('queue depth')).getByText(queueDepthCaption)).toBeInTheDocument();
+  expect(tile('queue depth')).toHaveAccessibleDescription(queueDepthCaption);
+
+  expect(await within(tile('queue depth')).findByText('42')).toBeInTheDocument();
+  expect(tile('queue depth')).toHaveAccessibleDescription(queueDepthCaption);
+  for (const label of ['detectors', 'events/s in', 'events/s out']) {
+    expect(tile(label)).not.toHaveAccessibleDescription();
+    expect(within(tile(label)).queryByText(queueDepthCaption)).not.toBeInTheDocument();
+  }
+});
+
+it('explains the queue depth beside the title of its chart panel', async () => {
+  stubApi();
+
+  render(<App />);
+  const history = screen.getByRole('figure', { name: 'pipeline history' });
+
+  expect(within(history).getByText('queue depth')).toHaveTextContent(`queue depth ${queueDepthCaption}`);
+  expect(within(history).getByText('detectors')).toHaveTextContent(/^detectors$/);
+});
+
 it('shows a finding stored after the page was opened', async () => {
   vi.useFakeTimers();
   const stored = [finding({ id: 1, agent_id: 'agent_1_1' })];
