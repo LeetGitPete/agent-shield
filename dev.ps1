@@ -82,7 +82,8 @@ function Show-Help {
     Write-Host '  status           show the pods, the autoscaler state, the load and the triage provider'
     Write-Host '  test             run the Go tests and the frontend tests'
     Write-Host '  web              run the console dev server with hot reload on http://localhost:5173, against the API on localhost:8080'
-    Write-Host '  load             load low|high|off: set the average load of the simulated fleet, or switch it off'
+    Write-Host '  load             load low|high|off: set the average load of the simulated fleet, or switch it off; low and high also reset the suspicious probability'
+    Write-Host '  suspicious       suspicious P: set the probability, from 0 to 1, that a simulated event is suspicious, keeping the rate; run it after load'
     Write-Host '  clean            empty the queues, the shared state and the findings'
     Write-Host '  simulate-attack  publish a known attack to verify detection; flags: -agents N -gap 300ms -out-of-order -customer ID'
     Write-Host '  triage           triage mock|gemini: set the triage provider and wait for its rollout'
@@ -529,6 +530,28 @@ function Set-Load([string[]]$Rest) {
     Write-Host "Load: $(Get-LoadDescription)"
 }
 
+# Sets only the sensor's suspicious probability: the rate and the replica
+# count stay, so with the load off the value is stored and no sensor starts.
+# The value is passed on as this script formats it, not as typed, so the
+# sensor's parser accepts it and a value equal to a level's matches that
+# level's text.
+function Set-SuspiciousProbability([string[]]$Rest) {
+    $probability = 0.0
+    $parsed = $Rest.Count -eq 1 -and [double]::TryParse($Rest[0], [Globalization.NumberStyles]::Float, [Globalization.CultureInfo]::InvariantCulture, [ref]$probability)
+    # NaN and the infinities fail the range check.
+    if (-not ($parsed -and $probability -ge 0 -and $probability -le 1)) {
+        Stop-Script 'Usage: dev.ps1 suspicious P, with P from 0 to 1, for example 0.0001'
+    }
+    $value = $probability.ToString([Globalization.CultureInfo]::InvariantCulture)
+    Assert-StackDeployed
+
+    kubectl set env deployment/sensor "SENSOR_SUSPICIOUS_PROB=$value"
+    Assert-LastExit 'Setting the suspicious probability'
+    kubectl rollout status deployment/sensor --timeout=300s
+    Assert-LastExit 'Waiting for the sensor'
+    Write-Host "Load: $(Get-LoadDescription)"
+}
+
 # Returns the ready and the unacknowledged message count of a queue, read
 # with the broker's own tool in its pod. The management API would lag up to
 # five seconds behind.
@@ -624,6 +647,7 @@ try {
         'simulate-attack' { Invoke-SimulateAttack $rest }
         'triage' { Set-TriageProvider $rest }
         'load' { Set-Load $rest }
+        'suspicious' { Set-SuspiciousProbability $rest }
         'clean' { Assert-NoArguments $command $rest; Invoke-Clean }
         default {
             Show-Help
