@@ -8,7 +8,7 @@
     "quality_profile": "standard",
     "repository": {
       "url": "https://github.com/LeetGitPete/agent-shield",
-      "revision": "8dbc502dbedfe92f1237ec56eacd63a591f577d0"
+      "revision": "515164c0affd1384102ddf387fb1591212234c57"
     },
     "views": [
       {"id": "event-path", "label": "Event path", "focus": ["sensor", "events-q", "detector", "postgres", "api", "console", "browser"], "note": "Tool-call events flow from the sensor fleet through the queue and the rules engine into findings the console shows."},
@@ -19,21 +19,21 @@
     ]
   },
   "components": [
-    {"id": "sensor", "type": "backend", "label": "Sensor fleet", "sublabel": "simulated agents", "pos": [40, 210], "size": [150, 60], "tag": "irregular load", "sources": [{"path": "cmd/sensor/main.go"}, {"path": "cmd/sensor/generator.go"}]},
-    {"id": "events-q", "type": "messagebus", "label": "events queue", "sublabel": "RabbitMQ · durable", "pos": [270, 210], "size": [150, 60], "sources": [{"path": "internal/mq/mq.go"}]},
-    {"id": "dlq", "type": "messagebus", "label": "events.dlq", "sublabel": "dead-letter queue", "pos": [270, 360], "size": [150, 60], "sources": [{"path": "internal/mq/mq.go"}]},
-    {"id": "detector", "type": "backend", "label": "Detector", "sublabel": "1 to 5 replicas · 4 rules", "pos": [500, 210], "size": [150, 60], "tag": "1 to 5 replicas", "sources": [{"path": "cmd/detector/main.go"}, {"path": "internal/rules/rules.go"}]},
-    {"id": "redis", "type": "database", "label": "Redis 8", "sublabel": "shared rule state", "pos": [500, 60], "size": [150, 60], "tag": "expiring records", "sources": [{"path": "internal/rules/redis_store.go"}]},
-    {"id": "keda", "type": "cloud", "label": "KEDA", "sublabel": "ScaledObject", "pos": [730, 60], "size": [150, 60], "tag": "rate and backlog", "sources": [{"path": "k8s/scaledobject.yaml"}]},
-    {"id": "mgmt", "type": "messagebus", "label": "Management API", "sublabel": "RabbitMQ :15672", "pos": [960, 60], "size": [150, 60], "tag": "events queue statistics", "sources": [{"path": "k8s/infra.yaml"}]},
-    {"id": "postgres", "type": "database", "label": "PostgreSQL 17", "sublabel": "findings · verdicts", "pos": [730, 210], "size": [150, 60], "tag": "UNIQUE(event_id, rule)", "sources": [{"path": "internal/schema/schema.go"}]},
-    {"id": "api", "type": "backend", "label": "API", "sublabel": ":8080 · read-only", "pos": [960, 210], "size": [150, 60], "sources": [{"path": "cmd/api/routes.go"}, {"path": "cmd/api/main.go"}, {"path": "cmd/api/stats.go"}]},
-    {"id": "console", "type": "frontend", "label": "Console", "sublabel": "nginx :3000 · React", "pos": [960, 360], "size": [150, 60]},
-    {"id": "browser", "type": "external", "label": "Operator", "sublabel": "browser", "pos": [1190, 360], "size": [150, 60]},
-    {"id": "triage-q", "type": "messagebus", "label": "triage queue", "sublabel": "rule hits only", "pos": [500, 360], "size": [150, 60], "sources": [{"path": "internal/mq/mq.go"}]},
-    {"id": "triage", "type": "backend", "label": "Triage", "sublabel": "Go · two providers", "pos": [730, 360], "size": [150, 60], "sources": [{"path": "cmd/triage/main.go"}, {"path": "cmd/triage/provider.go"}, {"path": "cmd/triage/outcome.go"}]},
-    {"id": "mock", "type": "backend", "label": "Mock provider", "sublabel": "no verdict, no quota", "pos": [730, 510], "size": [150, 60], "tag": "deployed default", "sources": [{"path": "cmd/triage/provider.go"}]},
-    {"id": "gemini", "type": "cloud", "label": "Gemini API", "sublabel": "gemini-3.5-flash-lite", "pos": [1190, 510], "size": [150, 60], "tag": "switched on explicitly", "sources": [{"path": "cmd/triage/gemini.go"}]}
+    {"id": "sensor", "type": "backend", "label": "Sensor fleet", "sublabel": "emits agents' tool-call events", "pos": [40, 210], "size": [180, 60], "tag": "simulated · bursty load", "sources": [{"path": "cmd/sensor/main.go"}, {"path": "cmd/sensor/generator.go"}]},
+    {"id": "events-q", "type": "messagebus", "label": "events queue", "sublabel": "buffers events for the detector", "pos": [300, 210], "size": [180, 60], "tag": "RabbitMQ · durable", "sources": [{"path": "internal/mq/mq.go"}]},
+    {"id": "dlq", "type": "messagebus", "label": "events.dlq", "sublabel": "holds malformed events", "pos": [300, 360], "size": [180, 60], "tag": "dead-letter, no requeue", "sources": [{"path": "internal/mq/mq.go"}]},
+    {"id": "detector", "type": "backend", "label": "Detector", "sublabel": "runs 4 rules on every event", "pos": [560, 210], "size": [180, 60], "tag": "1 to 5 replicas · 16 in flight", "sources": [{"path": "cmd/detector/main.go"}, {"path": "internal/rules/rules.go"}]},
+    {"id": "redis", "type": "database", "label": "Redis 8", "sublabel": "shared exfiltration state", "pos": [560, 60], "size": [180, 60], "tag": "expiring records · 10 min window", "sources": [{"path": "internal/rules/redis_store.go"}]},
+    {"id": "keda", "type": "cloud", "label": "KEDA", "sublabel": "scales detector from queue load", "pos": [820, 60], "size": [180, 60], "tag": "ScaledObject · rate and backlog", "sources": [{"path": "k8s/scaledobject.yaml"}]},
+    {"id": "mgmt", "type": "messagebus", "label": "Management API", "sublabel": "reports events queue statistics", "pos": [1080, 60], "size": [180, 60], "tag": "RabbitMQ :15672 · HTTP", "sources": [{"path": "k8s/infra.yaml"}]},
+    {"id": "postgres", "type": "database", "label": "PostgreSQL 17", "sublabel": "stores findings and verdicts", "pos": [820, 210], "size": [180, 60], "tag": "UNIQUE(event_id, rule)", "sources": [{"path": "internal/schema/schema.go"}]},
+    {"id": "api", "type": "backend", "label": "API", "sublabel": "serves findings and queue stats", "pos": [1080, 210], "size": [180, 60], "tag": ":8080 · read-only REST", "sources": [{"path": "cmd/api/routes.go"}, {"path": "cmd/api/main.go"}, {"path": "cmd/api/stats.go"}]},
+    {"id": "console", "type": "frontend", "label": "Console", "sublabel": "shows stats, chart, findings", "pos": [1080, 360], "size": [180, 60], "tag": "nginx :3000 · React · polls 2 s"},
+    {"id": "browser", "type": "external", "label": "Operator", "sublabel": "reviews findings in a browser", "pos": [1340, 360], "size": [180, 60]},
+    {"id": "triage-q", "type": "messagebus", "label": "triage queue", "sublabel": "rule hits waiting for review", "pos": [560, 360], "size": [180, 60], "tag": "RabbitMQ · durable", "sources": [{"path": "internal/mq/mq.go"}]},
+    {"id": "triage", "type": "backend", "label": "Triage", "sublabel": "gets a verdict per rule hit", "pos": [820, 360], "size": [180, 60], "tag": "two providers · one at a time", "sources": [{"path": "cmd/triage/main.go"}, {"path": "cmd/triage/provider.go"}, {"path": "cmd/triage/outcome.go"}]},
+    {"id": "mock", "type": "backend", "label": "Mock provider", "sublabel": "stand-in, never gives a verdict", "pos": [820, 510], "size": [180, 60], "tag": "deployed default · ~1 s delay", "sources": [{"path": "cmd/triage/provider.go"}]},
+    {"id": "gemini", "type": "cloud", "label": "Gemini API", "sublabel": "LLM verdict on a rule hit", "pos": [1340, 510], "size": [180, 60], "tag": "gemini-3.5-flash-lite · opt-in", "sources": [{"path": "cmd/triage/gemini.go"}]}
   ],
   "boundaries": [
     {"kind": "region", "label": "Kubernetes cluster (Docker Desktop)", "wraps": ["sensor", "events-q", "dlq", "detector", "redis", "keda", "mgmt", "postgres", "api", "console", "triage-q", "triage", "mock"]},
@@ -41,20 +41,20 @@
   ],
   "connections": [
     {"id": "publish-events", "from": "sensor", "to": "events-q", "label": "publish", "variant": "emphasis"},
-    {"id": "consume-events", "from": "events-q", "to": "detector", "label": "consume", "variant": "emphasis"},
-    {"id": "dead-letter", "from": "events-q", "to": "dlq", "label": "dead-letter", "variant": "dashed", "fromSide": "bottom", "toSide": "top", "labelDy": 24},
-    {"id": "store-finding", "from": "detector", "to": "postgres", "label": "findings", "variant": "emphasis"},
-    {"id": "shared-state", "from": "detector", "to": "redis", "label": "write, then read", "fromSide": "top", "toSide": "bottom", "labelDy": -55},
+    {"id": "consume-events", "from": "events-q", "to": "detector", "label": "consume, ack after write", "variant": "emphasis", "labelDy": -24},
+    {"id": "dead-letter", "from": "events-q", "to": "dlq", "label": "malformed, nacked", "variant": "dashed", "fromSide": "bottom", "toSide": "top", "labelDy": 24},
+    {"id": "store-finding", "from": "detector", "to": "postgres", "label": "INSERT, repeats ignored", "variant": "emphasis", "labelDy": -24},
+    {"id": "shared-state", "from": "detector", "to": "redis", "label": "store, then match pair", "fromSide": "top", "toSide": "bottom", "labelDy": -55},
     {"id": "scale-detector", "from": "keda", "to": "detector", "label": "scales 1 to 5", "fromSide": "bottom", "toSide": "top"},
-    {"id": "read-broker", "from": "keda", "to": "mgmt", "label": "reads"},
+    {"id": "read-broker", "from": "keda", "to": "mgmt", "label": "reads rate, backlog", "labelDy": -24},
     {"id": "read-stats", "from": "api", "to": "mgmt", "label": "GET /stats", "fromSide": "top", "toSide": "bottom"},
     {"id": "read-findings", "from": "api", "to": "postgres", "label": "SELECT"},
     {"id": "call-api", "from": "console", "to": "api", "label": "/api proxy", "variant": "emphasis", "fromSide": "top", "toSide": "bottom"},
     {"id": "open-console", "from": "browser", "to": "console", "label": "HTTP :3000", "variant": "emphasis"},
     {"id": "request-triage", "from": "detector", "to": "triage-q", "label": "triage request", "fromSide": "bottom", "toSide": "top", "labelDy": 24},
-    {"id": "consume-triage", "from": "triage-q", "to": "triage", "label": "prefetch 1"},
+    {"id": "consume-triage", "from": "triage-q", "to": "triage", "label": "one at a time"},
     {"id": "write-outcome", "from": "triage", "to": "postgres", "label": "verdict, source", "fromSide": "top", "toSide": "bottom", "labelDy": -16},
-    {"id": "judge-mock", "from": "triage", "to": "mock", "label": "default", "fromSide": "bottom", "toSide": "top", "labelDy": 24},
+    {"id": "judge-mock", "from": "triage", "to": "mock", "label": "asks for verdict (default)", "fromSide": "bottom", "toSide": "top", "labelDy": 24},
     {"id": "judge-gemini", "from": "triage", "to": "gemini", "label": "HTTPS, when switched on", "variant": "dashed", "fromSide": "right", "toSide": "left"}
   ],
   "cards": [
