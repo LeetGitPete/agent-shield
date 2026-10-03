@@ -5038,7 +5038,7 @@
         <path data-edge-from="sensor" data-edge-to="events-q" data-edge-label="publish" data-edge-key="0" data-edge-id="publish-events" data-composition-points="220,240;300,240" d="M 220 240 L 300 240" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
         <path data-edge-from="events-q" data-edge-to="detector" data-edge-label="consume, ack after write" data-edge-key="1" data-edge-id="consume-events" data-composition-points="480,240;560,240" d="M 480 240 L 560 240" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
         <path data-edge-from="events-q" data-edge-to="dlq" data-edge-label="malformed, nacked" data-edge-key="2" data-edge-id="dead-letter" data-composition-points="390,270;390,360" d="M 390 270 L 390 360" class="a-dashed" stroke-width="1.5" marker-end="url(#arrowhead-dashed)"/>
-        <path data-edge-from="detector" data-edge-to="postgres" data-edge-label="INSERT, repeats ignored" data-edge-key="3" data-edge-id="store-finding" data-composition-points="740,240;820,240" d="M 740 240 L 820 240" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
+        <path data-edge-from="detector" data-edge-to="postgres" data-edge-label="INSERT, repeats absorbed" data-edge-key="3" data-edge-id="store-finding" data-composition-points="740,240;820,240" d="M 740 240 L 820 240" class="a-emphasis" stroke-width="1.8" marker-end="url(#arrowhead-emphasis)"/>
         <path data-edge-from="detector" data-edge-to="redis" data-edge-label="store, then match pair" data-edge-key="4" data-edge-id="shared-state" data-composition-points="643,210;643,120" d="M 643 210 L 643 120" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
         <path data-edge-from="keda" data-edge-to="detector" data-edge-label="scales 1 to 5" data-edge-key="5" data-edge-id="scale-detector" data-composition-points="910,120;910,165;657,165;657,210" d="M 910 120 L 910 157 Q 910 165 902 165 L 665 165 Q 657 165 657 173 L 657 210" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
         <path data-edge-from="keda" data-edge-to="mgmt" data-edge-label="reads rate, backlog" data-edge-key="6" data-edge-id="read-broker" data-composition-points="1000,90;1080,90" d="M 1000 90 L 1080 90" class="a-default" stroke-width="1.5" marker-end="url(#arrowhead)"/>
@@ -5080,8 +5080,8 @@
         <text data-detail="fine" x="390" y="262" class="t-messagebus" font-size="7" text-anchor="middle">RabbitMQ · durable</text>
         </g>
 
-        <g id="node-dlq" data-node-id="dlq" data-node-label="events.dlq" tabindex="0" role="button" aria-label="Focus events.dlq, holds malformed events, Kubernetes cluster (Docker Desktop)" aria-pressed="false" data-node-kind="messagebus" data-node-sublabel="holds malformed events" data-node-tag="dead-letter, no requeue" data-node-context="Kubernetes cluster (Docker Desktop)">
-          <title>events.dlq · holds malformed events · Kubernetes cluster (Docker Desktop) · dead-letter, no requeue</title>
+        <g id="node-dlq" data-node-id="dlq" data-node-label="events.dlq" tabindex="0" role="button" aria-label="Focus events.dlq, holds malformed events, Kubernetes cluster (Docker Desktop)" aria-pressed="false" data-node-kind="messagebus" data-node-sublabel="holds malformed events" data-node-tag="dead-letter · no requeue" data-node-context="Kubernetes cluster (Docker Desktop)">
+          <title>events.dlq · holds malformed events · Kubernetes cluster (Docker Desktop) · dead-letter · no requeue</title>
           <rect x="300" y="360" width="180" height="60" rx="6" class="c-mask"/>
           <rect x="300" y="360" width="180" height="60" rx="6" class="c-messagebus" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="messagebus" class="semantic-sigil s-messagebus" transform="translate(306 366) scale(0.6875)">
@@ -5092,7 +5092,7 @@
           </g>
           <text data-node-label="" data-detail-anchor="" x="390" y="388" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">events.dlq</text>
         <text data-detail="context" x="390" y="404" class="t-muted" font-size="9" text-anchor="middle">holds malformed events</text>
-        <text data-detail="fine" x="390" y="412" class="t-messagebus" font-size="7" text-anchor="middle">dead-letter, no requeue</text>
+        <text data-detail="fine" x="390" y="412" class="t-messagebus" font-size="7" text-anchor="middle">dead-letter · no requeue</text>
         </g>
 
         <g id="node-detector" data-node-id="detector" data-node-label="Detector" tabindex="0" role="button" aria-label="Focus Detector, runs 4 rules on every event, Kubernetes cluster (Docker Desktop)" aria-pressed="false" data-node-kind="backend" data-node-sublabel="runs 4 rules on every event" data-node-tag="1 to 5 replicas · 16 in flight" data-node-context="Kubernetes cluster (Docker Desktop)">
@@ -5238,8 +5238,8 @@
         <text data-detail="fine" x="910" y="562" class="t-backend" font-size="7" text-anchor="middle">deployed default · ~1 s delay</text>
         </g>
 
-        <g id="node-gemini" data-node-id="gemini" data-node-label="Gemini API" tabindex="0" role="button" aria-label="Focus Gemini API, LLM verdict on a rule hit, Architecture component" aria-pressed="false" data-node-kind="cloud" data-node-sublabel="LLM verdict on a rule hit" data-node-tag="gemini-3.5-flash-lite · opt-in" data-node-context="Architecture component">
-          <title>Gemini API · LLM verdict on a rule hit · Architecture component · gemini-3.5-flash-lite · opt-in</title>
+        <g id="node-gemini" data-node-id="gemini" data-node-label="Gemini API" tabindex="0" role="button" aria-label="Focus Gemini API, LLM verdict on a rule hit, Architecture component" aria-pressed="false" data-node-kind="cloud" data-node-sublabel="LLM verdict on a rule hit" data-node-tag="gemini-3.5-flash-lite · switched on explicitly" data-node-context="Architecture component">
+          <title>Gemini API · LLM verdict on a rule hit · Architecture component · gemini-3.5-flash-lite · switched on explicitly</title>
           <rect x="1340" y="510" width="180" height="60" rx="6" class="c-mask"/>
           <rect x="1340" y="510" width="180" height="60" rx="6" class="c-cloud" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="cloud" class="semantic-sigil s-cloud" transform="translate(1346 516) scale(0.6875)">
@@ -5247,7 +5247,7 @@
           </g>
           <text data-node-label="" data-detail-anchor="" x="1430" y="538" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">Gemini API</text>
         <text data-detail="context" x="1430" y="554" class="t-muted" font-size="9" text-anchor="middle">LLM verdict on a rule hit</text>
-        <text data-detail="fine" x="1430" y="562" class="t-cloud" font-size="7" text-anchor="middle">gemini-3.5-flash-lite · opt-in</text>
+        <text data-detail="fine" x="1430" y="562" class="t-cloud" font-size="6.2" text-anchor="middle">gemini-3.5-flash-lite · switched on explicitly</text>
         </g>
 
         <!-- Connection labels -->
@@ -5263,9 +5263,9 @@
           <rect x="344.2" y="274" width="91.6" height="14" rx="3" class="c-mask"/>
           <text x="390" y="284" class="t-messagebus" font-size="8" text-anchor="middle">malformed, nacked</text>
         </g>
-        <g data-detail="context" data-edge-from="detector" data-edge-to="postgres" data-edge-label="INSERT, repeats ignored" data-edge-key="3" data-edge-id="store-finding">
-          <rect x="719.8" y="196" width="120.39999999999999" height="14" rx="3" class="c-mask"/>
-          <text x="780" y="206" class="t-backend" font-size="8" text-anchor="middle">INSERT, repeats ignored</text>
+        <g data-detail="context" data-edge-from="detector" data-edge-to="postgres" data-edge-label="INSERT, repeats absorbed" data-edge-key="3" data-edge-id="store-finding">
+          <rect x="717.4" y="196" width="125.19999999999999" height="14" rx="3" class="c-mask"/>
+          <text x="780" y="206" class="t-backend" font-size="8" text-anchor="middle">INSERT, repeats absorbed</text>
         </g>
         <g data-detail="context" data-edge-from="detector" data-edge-to="redis" data-edge-label="store, then match pair" data-edge-key="4" data-edge-id="shared-state">
           <rect x="585.2" y="135" width="115.6" height="14" rx="3" class="c-mask"/>
@@ -7253,7 +7253,6 @@
         copyShareCard: runCopyShareCard
       };
 
-      // Auto-open on page load for demo/screenshot purposes: ?openExport=1
       // Wait for fonts (so the menu doesn't flash before typography lands)
       // and paint before opening. Fallback timeout for browsers without the
       // Font Loading API.

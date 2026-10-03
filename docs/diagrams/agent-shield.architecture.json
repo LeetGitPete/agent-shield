@@ -21,7 +21,7 @@
   "components": [
     {"id": "sensor", "type": "backend", "label": "Sensor fleet", "sublabel": "emits agents' tool-call events", "pos": [40, 210], "size": [180, 60], "tag": "simulated · bursty load", "sources": [{"path": "cmd/sensor/main.go"}, {"path": "cmd/sensor/generator.go"}]},
     {"id": "events-q", "type": "messagebus", "label": "events queue", "sublabel": "buffers events for the detector", "pos": [300, 210], "size": [180, 60], "tag": "RabbitMQ · durable", "sources": [{"path": "internal/mq/mq.go"}]},
-    {"id": "dlq", "type": "messagebus", "label": "events.dlq", "sublabel": "holds malformed events", "pos": [300, 360], "size": [180, 60], "tag": "dead-letter, no requeue", "sources": [{"path": "internal/mq/mq.go"}]},
+    {"id": "dlq", "type": "messagebus", "label": "events.dlq", "sublabel": "holds malformed events", "pos": [300, 360], "size": [180, 60], "tag": "dead-letter · no requeue", "sources": [{"path": "internal/mq/mq.go"}]},
     {"id": "detector", "type": "backend", "label": "Detector", "sublabel": "runs 4 rules on every event", "pos": [560, 210], "size": [180, 60], "tag": "1 to 5 replicas · 16 in flight", "sources": [{"path": "cmd/detector/main.go"}, {"path": "internal/rules/rules.go"}]},
     {"id": "redis", "type": "database", "label": "Redis 8", "sublabel": "shared exfiltration state", "pos": [560, 60], "size": [180, 60], "tag": "expiring records · 10 min window", "sources": [{"path": "internal/rules/redis_store.go"}]},
     {"id": "keda", "type": "cloud", "label": "KEDA", "sublabel": "scales detector from queue load", "pos": [820, 60], "size": [180, 60], "tag": "ScaledObject · rate and backlog", "sources": [{"path": "k8s/scaledobject.yaml"}]},
@@ -33,7 +33,7 @@
     {"id": "triage-q", "type": "messagebus", "label": "triage queue", "sublabel": "rule hits waiting for review", "pos": [560, 360], "size": [180, 60], "tag": "RabbitMQ · durable", "sources": [{"path": "internal/mq/mq.go"}]},
     {"id": "triage", "type": "backend", "label": "Triage", "sublabel": "gets a verdict per rule hit", "pos": [820, 360], "size": [180, 60], "tag": "two providers · one at a time", "sources": [{"path": "cmd/triage/main.go"}, {"path": "cmd/triage/provider.go"}, {"path": "cmd/triage/outcome.go"}]},
     {"id": "mock", "type": "backend", "label": "Mock provider", "sublabel": "stand-in, never gives a verdict", "pos": [820, 510], "size": [180, 60], "tag": "deployed default · ~1 s delay", "sources": [{"path": "cmd/triage/provider.go"}]},
-    {"id": "gemini", "type": "cloud", "label": "Gemini API", "sublabel": "LLM verdict on a rule hit", "pos": [1340, 510], "size": [180, 60], "tag": "gemini-3.5-flash-lite · opt-in", "sources": [{"path": "cmd/triage/gemini.go"}]}
+    {"id": "gemini", "type": "cloud", "label": "Gemini API", "sublabel": "LLM verdict on a rule hit", "pos": [1340, 510], "size": [180, 60], "tag": "gemini-3.5-flash-lite · switched on explicitly", "sources": [{"path": "cmd/triage/gemini.go"}]}
   ],
   "boundaries": [
     {"kind": "region", "label": "Kubernetes cluster (Docker Desktop)", "wraps": ["sensor", "events-q", "dlq", "detector", "redis", "keda", "mgmt", "postgres", "api", "console", "triage-q", "triage", "mock"]},
@@ -43,7 +43,7 @@
     {"id": "publish-events", "from": "sensor", "to": "events-q", "label": "publish", "variant": "emphasis"},
     {"id": "consume-events", "from": "events-q", "to": "detector", "label": "consume, ack after write", "variant": "emphasis", "labelDy": -24},
     {"id": "dead-letter", "from": "events-q", "to": "dlq", "label": "malformed, nacked", "variant": "dashed", "fromSide": "bottom", "toSide": "top", "labelDy": 24},
-    {"id": "store-finding", "from": "detector", "to": "postgres", "label": "INSERT, repeats ignored", "variant": "emphasis", "labelDy": -24},
+    {"id": "store-finding", "from": "detector", "to": "postgres", "label": "INSERT, repeats absorbed", "variant": "emphasis", "labelDy": -24},
     {"id": "shared-state", "from": "detector", "to": "redis", "label": "store, then match pair", "fromSide": "top", "toSide": "bottom", "labelDy": -55},
     {"id": "scale-detector", "from": "keda", "to": "detector", "label": "scales 1 to 5", "fromSide": "bottom", "toSide": "top"},
     {"id": "read-broker", "from": "keda", "to": "mgmt", "label": "reads rate, backlog", "labelDy": -24},
