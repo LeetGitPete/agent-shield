@@ -30,10 +30,8 @@ $WebDir = 'web'
 $AppDeployments = @('detector', 'triage', 'api', 'sensor', 'console')
 $InfraDeployments = @('rabbitmq', 'postgres', 'redis')
 $AllDeployments = $AppDeployments + $InfraDeployments
-# One sensor Deployment per customer, from before the single fleet sensor.
-$LegacySensors = @('sensor-acme', 'sensor-globex')
 $AppSelector = 'app in (' + ($AppDeployments -join ',') + ')'
-$StackSelector = 'app in (' + (($AllDeployments + $LegacySensors) -join ',') + ')'
+$StackSelector = 'app in (' + ($AllDeployments -join ',') + ')'
 $GeminiSecret = 'gemini'
 $EnvFile = Join-Path $PSScriptRoot '.env'
 $StackDownMessage = "The stack is down. 'dev.ps1 deploy' brings it up."
@@ -276,16 +274,6 @@ function Invoke-Deploy {
     kubectl apply -f k8s/scaledobject.yaml
     Assert-LastExit 'Applying the scaled object'
 
-    $legacy = @(kubectl delete deployment @LegacySensors --ignore-not-found)
-    Assert-LastExit 'Removing the legacy sensor Deployments'
-    if ($legacy.Count -gt 0) {
-        foreach ($line in $legacy) {
-            Write-Host "Removed a legacy sensor: $line"
-        }
-    } else {
-        Write-Host 'No legacy sensor Deployments to remove.'
-    }
-
     # The image tag is fixed, so a rebuild does not start a rollout on its
     # own. A restarted pod pulls the current build.
     Write-Host 'Restarting the applications'
@@ -342,8 +330,6 @@ function Invoke-Down([string[]]$Rest) {
     Assert-LastExit 'Removing the applications'
     $removed += @(kubectl delete -f k8s/infra.yaml --ignore-not-found)
     Assert-LastExit 'Removing the infrastructure'
-    $removed += @(kubectl delete deployment @LegacySensors --ignore-not-found)
-    Assert-LastExit 'Removing the legacy sensor Deployments'
     $removed += @(kubectl delete secret $GeminiSecret --ignore-not-found)
     Assert-LastExit 'Removing the Gemini secret'
 
