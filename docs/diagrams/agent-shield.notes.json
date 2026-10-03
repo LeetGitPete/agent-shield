@@ -1,0 +1,144 @@
+{
+  "nodes": {
+    "sensor": [
+      "One process simulates 4 customers with 10 agents each",
+      "Agents alternate work and idle, 30 s each on average",
+      "Low load: about 10 events/s, 0.5 percent of them suspicious",
+      "With SENSOR_SEED set, the sequence repeats, event ids included"
+    ],
+    "events-q": [
+      "Detector replicas share it; each message goes to one of them",
+      "Bursts and detector downtime become backlog, not lost events",
+      "Sensor, detector and triage declare it identically at startup"
+    ],
+    "dlq": [
+      "Gets events the detector cannot parse or that lack an id",
+      "No service consumes it; dev.ps1 clean empties it"
+    ],
+    "detector": [
+      "Rules: secret read, pipe to shell, unknown domain, exfiltration",
+      "A synthetic 5 ms per event caps one replica near 174 events/s",
+      "On a Redis or PostgreSQL failure the event waits, never skipped",
+      "Its pod name is stored with each finding as the detector id"
+    ],
+    "redis": [
+      "Per agent: a sorted set of secret reads, one of web requests",
+      "Requests live only 60 s, enough to cover replica reordering",
+      "No persistence: after a restart, earlier reads are forgotten"
+    ],
+    "keda": [
+      "Rate: one replica per 140 events/s, 0.8 of the measured 174",
+      "Backlog: one replica per 100 ready messages, unacked not counted",
+      "The count follows whichever trigger asks for more",
+      "Scale-in waits for a minute of lower load"
+    ],
+    "mgmt": [
+      "RabbitMQ's management plugin, not code in this repository",
+      "Rates are broker samples, read as zero before the first one",
+      "On the host, localhost:15672 also serves the management UI"
+    ],
+    "postgres": [
+      "Holds findings only; events are never stored",
+      "Detector and triage set up the table at startup, under a lock",
+      "One exfiltration raised by both its events is stored once",
+      "No volume in the cluster: findings go when the pod is replaced"
+    ],
+    "api": [
+      "Routes: /findings, /customers, /stats and /healthz",
+      "Two stateless replicas; filters bind into one static query",
+      "Health checks the database only; a broker outage fails /stats",
+      "Creates no table: queries fail until detector or triage has run"
+    ],
+    "console": [
+      "Polls stats, findings and customers; the next poll is the retry",
+      "Chart: 5 min of queue depth and detector count, kept in the page",
+      "A failed poll leaves the last stats up, dimmed, with the reason",
+      "Polling goes on in a hidden tab, so the chart keeps filling"
+    ],
+    "browser": [
+      "Filters findings by severity, customer and rule",
+      "Opens a row for the verdict text and an exfiltration's evidence",
+      "A cross-replica mark shows two detectors handled the pair"
+    ],
+    "triage-q": [
+      "Absorbs the rate gap between rules and a slow, rate-limited LLM",
+      "No dead-letter queue: triage drops requests it cannot parse"
+    ],
+    "triage": [
+      "TRIAGE_PROVIDER picks mock or gemini; dev.ps1 triage switches it",
+      "A failed call gets one retry after 10 s, then no verdict",
+      "A missing verdict never overwrites one already written",
+      "Best effort: a lost verdict is acceptable, a stuck queue is not"
+    ],
+    "mock": [
+      "Lets the pipeline run without a Gemini key or quota",
+      "Also chosen when TRIAGE_PROVIDER is unset and no key is present"
+    ],
+    "gemini": [
+      "Must answer JSON: malicious or benign, with a one-line reason",
+      "Pinned model id, not an alias; GEMINI_MODEL overrides it"
+    ]
+  },
+  "connections": {
+    "publish-events": [
+      "Each tool call is one persistent JSON message",
+      "No publisher confirms; a failed publish stops the sensor"
+    ],
+    "consume-events": [
+      "A crash before the ack means redelivery, never loss",
+      "Failed events go back about 1 s after they were taken"
+    ],
+    "dead-letter": [
+      "The broker routes it, by the queue's dead-letter arguments"
+    ],
+    "store-finding": [
+      "ON CONFLICT DO NOTHING: no second finding, no second triage",
+      "Also the detector id and, for exfiltration, JSONB evidence"
+    ],
+    "shared-state": [
+      "Written before read: concurrent replicas cannot both miss",
+      "1 s timeouts, no client retries; a failure requeues the event"
+    ],
+    "scale-detector": [
+      "Owns the replica count; a redeploy does not reset it",
+      "A new replica consumes at once: no state to hand over"
+    ],
+    "read-broker": [
+      "Guest credentials; full service name, from KEDA's namespace"
+    ],
+    "read-stats": [
+      "One request per call for the events queue, 2 s timeout",
+      "Failure: a 503 with a fixed text, never the credentials"
+    ],
+    "read-findings": [
+      "Newest first by id: 50 rows by default, at most 500",
+      "Also the distinct customer ids for the customer filter"
+    ],
+    "call-api": [
+      "nginx strips the prefix: /api/findings arrives as /findings",
+      "Same origin as the page, so the API needs no CORS headers"
+    ],
+    "open-console": [
+      "LoadBalancer Service: Docker Desktop maps it to localhost",
+      "The page is revalidated on load, so new builds show at once"
+    ],
+    "request-triage": [
+      "New findings only: id, event, rule, severity and detail",
+      "Not atomic with the insert: a crash may leave it pending"
+    ],
+    "consume-triage": [
+      "Manual acks; a failed provider call is retried once"
+    ],
+    "write-outcome": [
+      "triaged_at is set too: pending ends even without a verdict",
+      "Failed writes are requeued, unless the provider failed twice"
+    ],
+    "judge-mock": [
+      "In-process call; the finding is recorded as handled by mock"
+    ],
+    "judge-gemini": [
+      "Key sent in a header, never in the URL; 30 s timeout",
+      "Any non-200 status, 429 included, counts as a failure"
+    ]
+  }
+}
