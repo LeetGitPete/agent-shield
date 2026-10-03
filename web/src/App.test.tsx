@@ -512,7 +512,7 @@ it('explains the queue depth under its value, as the tile description, from befo
 
   expect(await within(tile('queue depth')).findByText('42')).toBeInTheDocument();
   expect(tile('queue depth')).toHaveAccessibleDescription(queueDepthCaption);
-  for (const label of ['detectors', 'events/s in', 'events/s out']) {
+  for (const label of tileLabels.filter((label) => label !== 'queue depth')) {
     expect(tile(label)).not.toHaveAccessibleDescription();
     expect(within(tile(label)).queryByText(queueDepthCaption)).not.toBeInTheDocument();
   }
@@ -522,6 +522,7 @@ it('explains the queue depth beside the title of its chart panel', async () => {
   stubApi();
 
   render(<App />);
+  await screen.findByText('samples held: 1 (last 5 minutes)');
   const history = screen.getByRole('figure', { name: 'pipeline history' });
 
   expect(within(history).getByText('queue depth')).toHaveTextContent(`queue depth ${queueDepthCaption}`);

@@ -11,7 +11,9 @@ export function StatsStrip({ stats, failure }: Props) {
   const dimmed = failure !== undefined;
   return (
     <section aria-label="pipeline statistics" className="mt-4">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Equal rows, so that the one tile with a caption does not leave the
+          other row shorter when the tiles take two rows. */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:auto-rows-fr lg:grid-cols-4">
         <Tile label="queue depth" value={stats?.ready.toString()} dimmed={dimmed} caption={QUEUE_DEPTH_CAPTION} />
         <Tile label="detectors" value={stats?.consumers.toString()} dimmed={dimmed} />
         <Tile label="events/s in" value={stats?.publish_rate.toFixed(1)} dimmed={dimmed} />
@@ -41,7 +43,7 @@ interface TileProps {
   label: string;
   value: string | undefined;
   dimmed: boolean;
-  caption?: string; // what the value counts; the grid stretches the tiles without one to the same height
+  caption?: string; // what the value counts
 }
 
 function Tile({ label, value, dimmed, caption }: TileProps) {
