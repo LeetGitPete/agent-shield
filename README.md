@@ -87,15 +87,7 @@ sets `TRIAGE_PROVIDER=gemini` together with a `GEMINI_API_KEY`. `docker compose 
 ### Kubernetes (Docker Desktop)
 
 `dev.ps1` builds, deploys and operates the stack on the Kubernetes cluster built into Docker Desktop.
-It runs under Windows PowerShell 5.1; with no arguments it lists its commands.
-
-```powershell
-.\dev.ps1 deploy            # build the images, install KEDA if missing, apply the manifests, wait for the rollout
-.\dev.ps1 status            # pods, autoscaler state, load and triage provider
-.\dev.ps1 load high         # raise the load and watch the detector scale out in the console
-.\dev.ps1 simulate-attack   # publish a known attack and find it in the console
-.\dev.ps1 down              # remove the stack
-```
+It runs under Windows PowerShell 5.1.
 
 | Command | What it does |
 |---|---|
@@ -114,6 +106,26 @@ It runs under Windows PowerShell 5.1; with no arguments it lists its commands.
 
 `web` and `test` first install the console's dependencies from the lock file when they are missing.
 Under compose the attack simulation runs with `go run ./cmd/attacksim` and the same flags.
+
+### Local demo (PowerShell)
+
+1. `.\dev.ps1 deploy`: takes a few minutes; ends with "The stack is up."
+2. `.\dev.ps1 status`: every pod Running, load low, triage provider mock.
+3. Open the console at http://localhost:3000.
+4. `.\dev.ps1 clean`: the findings table empties.
+5. `.\dev.ps1 load low|high|off`: sets the load of the simulated fleet.
+6. `.\dev.ps1 simulate-attack`, at high load with 5 detectors running: 9 findings, 3 per
+   agent (`secret_file_read`, `unknown_domain`, `exfiltration`). With the `rule` filter on
+   `exfiltration`, a `cross-replica` tag marks a read and a request handled by different
+   detectors, and `[+]` shows the evidence. If no row has the tag, run it again.
+7. `.\dev.ps1 simulate-attack -out-of-order`: the requests are published before the reads.
+   The rule still fires once per agent, and `[+]` usually shows `raised by: read`.
+8. Optional, with `GEMINI_API_KEY` in `.env` before the deploy: `.\dev.ps1 triage gemini`,
+   then `.\dev.ps1 simulate-attack`. The triage column goes from `pending` to `malicious`
+   or `benign`. `.\dev.ps1 triage mock` switches back.
+9. `.\dev.ps1 down`: removes the stack.
+
+`.\dev.ps1 help` lists all the script's commands.
 
 ## API
 
